@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/splitmind-banner.jpg" alt="SplitMind Logo Banner" width="100%">
+  <img src="assets/splitmind-banner.png" alt="SplitMind Logo Banner" width="100%">
 </p>
 
 <h1 align="center">SplitMind</h1>
