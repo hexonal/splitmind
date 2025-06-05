@@ -1,0 +1,22 @@
+# SplitMind Dashboard Requirements
+
+# FastAPI and server
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+
+# WebSocket support
+websockets==14.2
+aiofiles==24.1.0
+
+# HTTP client for Anthropic API
+httpx==0.25.2
+
+# Data validation
+pydantic==2.10.4
+
+# Optional: For development
+pytest==8.4.0
+pytest-asyncio==1.0.0
+black==25.1.0
+ruff==0.11.12
