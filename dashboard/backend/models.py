@@ -28,6 +28,9 @@ class Task(BaseModel):
     session: Optional[str] = None
     dependencies: List[str] = []  # List of task IDs that must be completed first
     priority: int = 0  # Higher priority tasks are assigned first (0 = normal, 1+ = higher)
+    owned_files: List[str] = []  # Files exclusively owned by this task
+    shared_files: List[str] = []  # Files that may be modified (with care)
+    creates_files: List[str] = []  # New files this task will create
     merge_order: int = 0  # Explicit merge sequence order
     exclusive_files: List[str] = []  # Files only this task should modify
     shared_files: List[str] = []  # Files that might be modified (requires coordination)

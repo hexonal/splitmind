@@ -106,6 +106,12 @@ class ApiService {
     });
   }
 
+  launchAgentMonitor = async (projectId: string): Promise<{ message: string; sessions: string[] }> => {
+    return this.request(`/projects/${projectId}/agents/monitor`, {
+      method: 'POST',
+    });
+  }
+
   resetAgentTasks = async (projectId: string): Promise<{
     success: boolean;
     reset_count: number;

@@ -80,9 +80,26 @@ async def get_projects():
 
 
 @app.post("/api/projects", response_model=Project)
-async def create_project(project: Project):
+async def create_project(project_data: dict):
     """Create a new project"""
     try:
+        # Create a Project instance with defaults for missing fields
+        from datetime import datetime
+        
+        # Ensure required fields are present
+        required_fields = ['id', 'name', 'path']
+        for field in required_fields:
+            if field not in project_data:
+                raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
+        
+        # Add defaults for optional fields
+        project_data.setdefault('created_at', datetime.now())
+        project_data.setdefault('updated_at', datetime.now())
+        project_data.setdefault('active', True)
+        project_data.setdefault('max_agents', 5)
+        
+        # Create Project instance
+        project = Project(**project_data)
         new_project = config_manager.add_project(project)
         
         # Notify via WebSocket
@@ -95,6 +112,8 @@ async def create_project(project: Project):
         return new_project
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/projects/{project_id}", response_model=Project)
@@ -319,7 +338,7 @@ async def delete_task(project_id: str, task_id: str):
 
 
 @app.post("/api/projects/{project_id}/tasks/{task_id}/merge")
-async def merge_task(project_id: str, task_id: str):
+async def merge_task(project_id: str, task_id: str, force: bool = False):
     """Manually merge a completed task"""
     try:
         pm = ProjectManager(project_id)
@@ -328,7 +347,7 @@ async def merge_task(project_id: str, task_id: str):
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
         
-        if task.status != TaskStatus.COMPLETED:
+        if task.status != TaskStatus.COMPLETED and not force:
             raise HTTPException(status_code=400, detail="Task must be completed to merge")
         
         # Use the existing merge script
@@ -336,13 +355,82 @@ async def merge_task(project_id: str, task_id: str):
         from pathlib import Path
         from datetime import datetime
         
-        result = subprocess.run([
-            "python",
-            str(Path(__file__).parent.parent.parent / "scripts" / "auto-merge.py"),
-            task.branch,
-            "--strategy", "merge",
-            "--json"
-        ], cwd=str(pm.project_path), capture_output=True, text=True)
+        # Simple direct merge approach
+        try:
+            # Ensure we're on main branch
+            checkout_main = subprocess.run(
+                ["git", "checkout", "main"],
+                cwd=str(pm.project_path),
+                capture_output=True,
+                text=True
+            )
+            
+            if checkout_main.returncode != 0:
+                raise Exception(f"Failed to checkout main: {checkout_main.stderr}")
+            
+            # Pull latest main
+            pull_result = subprocess.run(
+                ["git", "pull", "origin", "main"],
+                cwd=str(pm.project_path),
+                capture_output=True,
+                text=True
+            )
+            
+            # Check if the branch exists locally
+            branch_check = subprocess.run(
+                ["git", "rev-parse", "--verify", task.branch],
+                cwd=str(pm.project_path),
+                capture_output=True,
+                text=True
+            )
+            
+            if branch_check.returncode != 0:
+                # Branch doesn't exist, check in worktree
+                worktree_path = pm.project_path / "worktrees" / task.branch
+                if worktree_path.exists():
+                    # Push the branch from worktree to main repo
+                    push_result = subprocess.run(
+                        ["git", "push", "origin", f"HEAD:{task.branch}"],
+                        cwd=str(worktree_path),
+                        capture_output=True,
+                        text=True
+                    )
+                    
+                    if push_result.returncode != 0:
+                        raise Exception(f"Failed to push branch from worktree: {push_result.stderr}")
+                    
+                    # Fetch the branch in main repo
+                    fetch_result = subprocess.run(
+                        ["git", "fetch", "origin", task.branch],
+                        cwd=str(pm.project_path),
+                        capture_output=True,
+                        text=True
+                    )
+                else:
+                    raise Exception(f"Branch {task.branch} not found locally or in worktrees")
+            
+            # Now merge the branch
+            merge_result = subprocess.run(
+                ["git", "merge", task.branch, "--no-ff", "-m", f"Merge task: {task.title}"],
+                cwd=str(pm.project_path),
+                capture_output=True,
+                text=True
+            )
+            
+            if merge_result.returncode == 0:
+                result = merge_result
+            else:
+                raise Exception(f"Merge failed: {merge_result.stderr}")
+                
+        except Exception as e:
+            # If direct merge fails, fall back to the auto-merge script
+            result = subprocess.run([
+                "python",
+                str(Path(__file__).parent.parent.parent / "scripts" / "auto-merge.py"),
+                task.branch,
+                "--strategy", "merge",
+                "--json"
+            ], cwd=str(pm.project_path), capture_output=True, text=True)
         
         if result.returncode == 0:
             # Update task status to merged
@@ -363,11 +451,19 @@ async def merge_task(project_id: str, task_id: str):
             
             return {"message": f"Task '{task.title}' merged successfully"}
         else:
-            raise HTTPException(status_code=500, detail=f"Merge failed: {result.stderr}")
+            error_detail = result.stderr if result.stderr else result.stdout
+            if not error_detail:
+                error_detail = f"Unknown error (return code: {result.returncode})"
+            raise HTTPException(status_code=500, detail=f"Merge failed: {error_detail}")
     
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Merge error details: {error_trace}")
         raise HTTPException(status_code=500, detail=f"Merge error: {str(e)}")
 
 
@@ -405,6 +501,60 @@ async def launch_iterm(project_id: str, agent_id: str):
         subprocess.run(['osascript', '-e', applescript])
         
         return {"message": f"Launched iTerm for session {agent_id}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/projects/{project_id}/agents/monitor")
+async def launch_agent_monitor(project_id: str):
+    """Launch tmux session with split panes showing all active agents"""
+    try:
+        import subprocess
+        from pathlib import Path
+        
+        # Get the tmux viewer script path
+        viewer_script = Path(__file__).parent / "tmux_viewer.py"
+        
+        # Check if any agents are running
+        result = subprocess.run(
+            ["tmux", "list-sessions", "-F", "#{session_name}"],
+            capture_output=True,
+            text=True
+        )
+        
+        if result.returncode != 0 or not result.stdout:
+            raise HTTPException(status_code=404, detail="No active agent sessions found")
+        
+        # Filter for this project's sessions
+        sessions = [s for s in result.stdout.strip().split('\n') if s.endswith(f"-{project_id}")]
+        
+        if not sessions:
+            raise HTTPException(status_code=404, detail=f"No active sessions for project {project_id}")
+        
+        # Launch in iTerm
+        applescript = f'''
+        tell application "iTerm"
+            activate
+            
+            -- Create new window
+            create window with default profile
+            
+            tell current session of current window
+                write text "cd {Path.cwd()}"
+                write text "python {viewer_script} {project_id}"
+            end tell
+        end tell
+        '''
+        
+        subprocess.run(["osascript", "-e", applescript])
+        
+        return {
+            "message": f"Launched tmux monitor for {len(sessions)} active agents",
+            "sessions": sessions
+        }
+        
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

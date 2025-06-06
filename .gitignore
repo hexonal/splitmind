@@ -54,6 +54,7 @@ projects.json
 worktrees/
 *.log
 .tmux-session-*
+projects/
 
 # Temporary files
 *.tmp

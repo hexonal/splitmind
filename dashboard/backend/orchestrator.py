@@ -68,8 +68,20 @@ class OrchestratorManager:
         self.running = True
         self._stop_event.clear()
         
-        # Initialize merge queue for the project
-        self.merge_queue = MergeQueue(project.path)
+        # Initialize merge queue for the project with status update callback
+        async def update_task_status(task_id: str, status: TaskStatus):
+            pm = ProjectManager(project_id)
+            pm.update_task(task_id, {"status": status})
+            await self.ws_manager.broadcast(WebSocketMessage(
+                type="task_status_changed",
+                project_id=project_id,
+                data={
+                    "task_id": task_id,
+                    "status": status
+                }
+            ))
+        
+        self.merge_queue = MergeQueue(project.path, update_task_status)
         
         # Start the orchestrator loop
         self._task = asyncio.create_task(self._orchestrator_loop())
@@ -128,7 +140,8 @@ class OrchestratorManager:
                     tasks = pm.get_tasks()
                     await self._spawn_agents(pm, project, tasks, agents)
                     await self._check_agent_status()
-                    # Merge queue handles merging in _check_agent_status when tasks complete
+                    # Check for any completed tasks that need auto-merging
+                    await self._check_and_merge_completed_tasks(pm, tasks)
                 
                 # Wait for interval or stop event
                 try:
@@ -403,9 +416,15 @@ class OrchestratorManager:
                     prompt += f"\\nDescription: {task.description}"
             else:
                 # Use default prompt
-                prompt = f"Create a plan, review your plan and choose the best option, then accomplish the following task and commit the changes: {task.title}"
+                prompt = f"You are working on {pm.project.name}."
+                prompt += f"\\n\\nIMPORTANT: Use the TodoWrite tool to create a todo list for this task. Break down the work into clear, actionable items and track your progress by updating the todo status as you complete each item."
+                prompt += f"\\n\\nCreate a plan, review your plan and choose the best option, then accomplish the following task and commit the changes: {task.title}"
                 if task.description:
                     prompt += f"\\n\\nDescription: {task.description}"
+            
+            # Add todo tool reminder
+            if "TodoWrite" not in prompt:
+                prompt += f"\\n\\nREMINDER: Use the TodoWrite tool to break down this task into manageable todos and track your progress. Mark todos as 'in_progress' when you start them and 'completed' when done."
             
             # Add status file instruction with clear command
             prompt += f"\\n\\nIMPORTANT: When you have completed all work and committed your changes, execute this command as your FINAL action:\\nbash -c 'echo COMPLETED > {status_file}'"
@@ -683,3 +702,42 @@ echo "Claude exited unexpectedly"
         
         except Exception as e:
             print(f"Error checking agent status: {e}")
+    
+    async def _check_and_merge_completed_tasks(self, pm: ProjectManager, tasks: List[Task]):
+        """Check for completed tasks and auto-merge if enabled"""
+        if not self.config.auto_merge:
+            print("🔀 Auto-merge is disabled")
+            return
+            
+        if not self.merge_queue:
+            print("⚠️ Merge queue not initialized")
+            return
+        
+        try:
+            # Find all completed tasks not yet in merge queue
+            completed_tasks = [t for t in tasks if t.status == TaskStatus.COMPLETED]
+            
+            if completed_tasks:
+                print(f"🔀 Found {len(completed_tasks)} completed task(s)")
+                queue_ids = [t.id for t in self.merge_queue.queue]
+                
+                for task in completed_tasks:
+                    # Check if task is already in merge queue by ID
+                    if task.id not in queue_ids:
+                        print(f"📋 Adding completed task to merge queue: {task.title} (ID: {task.id})")
+                        await self.merge_queue.add_to_queue(task, tasks)
+                        
+                        # Notify via websocket
+                        await self.ws_manager.broadcast(WebSocketMessage(
+                            type="task_queued_for_merge",
+                            project_id=self.current_project_id,
+                            data={
+                                "task_id": task.id,
+                                "title": task.title
+                            }
+                        ))
+                    else:
+                        print(f"📋 Task already in merge queue: {task.title}")
+        
+        except Exception as e:
+            print(f"Error checking for completed tasks to merge: {e}")

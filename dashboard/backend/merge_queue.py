@@ -18,10 +18,11 @@ class MergeQueue:
     Manages orderly merging of completed tasks
     """
     
-    def __init__(self, project_path: str):
+    def __init__(self, project_path: str, status_update_callback=None):
         self.project_path = Path(project_path)
         self.queue: List[Task] = []
         self.merge_lock = asyncio.Lock()
+        self.status_update_callback = status_update_callback
         self.conflict_resolvers = {
             "package.json": self.resolve_package_json,
             ".gitignore": self.resolve_gitignore,
@@ -69,6 +70,10 @@ class MergeQueue:
                         task.status = TaskStatus.MERGED
                         task.merged_at = datetime.now()
                         print(f"✅ Successfully merged {task.title}")
+                        
+                        # Update task status via callback if provided
+                        if self.status_update_callback:
+                            await self.status_update_callback(task.id, TaskStatus.MERGED)
                         
                         # Clean up worktree
                         await self.cleanup_worktree(task)

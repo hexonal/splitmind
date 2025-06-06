@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Terminal, Cpu, Clock, GitBranch, ExternalLink, RotateCcw, CheckCircle, XCircle, CircleDot } from 'lucide-react';
+import { Terminal, Cpu, Clock, GitBranch, ExternalLink, RotateCcw, CheckCircle, XCircle, CircleDot, Monitor } from 'lucide-react';
 import { api } from '@/services/api';
 import { Agent } from '@/types';
 import { motion } from 'framer-motion';
@@ -16,6 +16,16 @@ interface AgentMonitorProps {
 
 export function AgentMonitor({ projectId }: AgentMonitorProps) {
   const queryClient = useQueryClient();
+  const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // Update time every second for live duration counter
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, []);
   
   // Fetch agents
   const { data: agents = [], isLoading } = useQuery({
@@ -47,6 +57,15 @@ export function AgentMonitor({ projectId }: AgentMonitorProps) {
     }
   };
 
+  const handleLaunchMonitor = async () => {
+    try {
+      await api.launchAgentMonitor(projectId);
+    } catch (error) {
+      console.error('Failed to launch monitor:', error);
+      alert('Failed to launch monitor: ' + (error as Error).message);
+    }
+  };
+
   if (isLoading) {
     return <div className="flex items-center justify-center h-96">Loading agents...</div>;
   }
@@ -67,16 +86,27 @@ export function AgentMonitor({ projectId }: AgentMonitorProps) {
         <h2 className="text-2xl font-bold text-electric-cyan">Agent Monitor</h2>
         <div className="flex items-center space-x-4">
           {agents.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleResetAll}
-              disabled={resetTasksMutation.isPending}
-              className="border-red-500/50 text-red-500 hover:bg-red-500/10"
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Reset All Agents
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLaunchMonitor}
+                className="border-electric-cyan/50 text-electric-cyan hover:bg-electric-cyan/10"
+              >
+                <Monitor className="w-4 h-4 mr-2" />
+                Split View
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleResetAll}
+                disabled={resetTasksMutation.isPending}
+                className="border-red-500/50 text-red-500 hover:bg-red-500/10"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Reset All Agents
+              </Button>
+            </>
           )}
           <Badge variant="glow" className="text-lg px-4 py-1">
             {agents.filter(a => a.status === 'running').length} Active
@@ -92,7 +122,7 @@ export function AgentMonitor({ projectId }: AgentMonitorProps) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <AgentCard agent={agent} onLaunchITerm={handleLaunchITerm} />
+            <AgentCard agent={agent} onLaunchITerm={handleLaunchITerm} currentTime={currentTime} />
           </motion.div>
         ))}
       </div>
@@ -103,19 +133,10 @@ export function AgentMonitor({ projectId }: AgentMonitorProps) {
 interface AgentCardProps {
   agent: Agent;
   onLaunchITerm: (agentId: string) => void;
+  currentTime: Date;
 }
 
-function AgentCard({ agent, onLaunchITerm }: AgentCardProps) {
-  const [currentTime, setCurrentTime] = useState(new Date());
-
-  // Update time every second for live duration counter
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, []);
+function AgentCard({ agent, onLaunchITerm, currentTime }: AgentCardProps) {
 
   const getStatusColor = () => {
     switch (agent.status) {

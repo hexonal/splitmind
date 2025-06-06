@@ -276,22 +276,31 @@ Make the tasks concrete and implementable by AI coding agents."""
                 "suggested_tasks": []
             }
         
-        # Optimized Task Master AI System Prompt (reduced tokens)
-        system_prompt = """You are a Task Master AI that creates wave-based task breakdowns for AI coding agents.
+        # Optimized Task Master AI System Prompt with Conflict Prevention
+        system_prompt = """You are a Task Master AI that creates conflict-free wave-based task breakdowns for AI coding agents.
+
+CONFLICT PREVENTION RULES:
+1. Each task MUST specify owned files (only this task can modify)
+2. Tasks in same wave must NEVER modify the same files
+3. Config files (package.json, *.config.*) only modified in Wave 1
+4. Feature tasks create components but DON'T modify app pages
+5. Integration tasks (final wave) assemble components into pages
 
 Rules:
 1. Each task: self-contained, 1-4 hours work, executable by single agent
 2. Group tasks into waves by dependencies (max 5 agents per wave)
-3. Earlier waves: setup/structure. Later waves: features/polish
+3. Wave 1: Setup/config. Wave 2-3: Features. Final Wave: Integration
 
 Task Format:
 Wave X: [Name] (Y agents)
 Agent N - [Role]
 Task: [Title]
-[Description with technical specs, files, libraries, configs]
+Owns: [files only this task can modify]
+Creates: [new files this task will create]
+[Description with technical specs]
 Output: [Deliverables]
 
-Generate a PROJECT PLAN followed by WAVE-BASED TASK BREAKDOWN."""
+Generate a PROJECT PLAN followed by CONFLICT-FREE TASK BREAKDOWN."""
 
         user_prompt = f"""Project: {project_info.get('project_name', 'Unknown')}
 
