@@ -1,20 +1,22 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Terminal, Cpu, Clock, GitBranch, ExternalLink } from 'lucide-react';
+import { Terminal, Cpu, Clock, GitBranch, ExternalLink, RotateCcw, CheckCircle, XCircle, CircleDot } from 'lucide-react';
 import { api } from '@/services/api';
 import { Agent } from '@/types';
 import { motion } from 'framer-motion';
-// Remove date-fns import - using custom function instead
+import { useState, useEffect } from 'react';
 
 interface AgentMonitorProps {
   projectId: string;
 }
 
 export function AgentMonitor({ projectId }: AgentMonitorProps) {
+  const queryClient = useQueryClient();
+  
   // Fetch agents
   const { data: agents = [], isLoading } = useQuery({
     queryKey: ['agents', projectId],
@@ -22,11 +24,26 @@ export function AgentMonitor({ projectId }: AgentMonitorProps) {
     refetchInterval: 5000, // Refresh every 5 seconds
   });
 
+  const resetTasksMutation = useMutation({
+    mutationFn: () => api.resetAgentTasks(projectId),
+    onSuccess: () => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: ['agents', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
+    },
+  });
+
   const handleLaunchITerm = async (agentId: string) => {
     try {
       await api.launchITerm(projectId, agentId);
     } catch (error) {
       console.error('Failed to launch iTerm:', error);
+    }
+  };
+
+  const handleResetAll = () => {
+    if (confirm('This will kill all agent sessions and reset their tasks to unclaimed. Are you sure?')) {
+      resetTasksMutation.mutate();
     }
   };
 
@@ -48,9 +65,23 @@ export function AgentMonitor({ projectId }: AgentMonitorProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-electric-cyan">Agent Monitor</h2>
-        <Badge variant="glow" className="text-lg px-4 py-1">
-          {agents.filter(a => a.status === 'running').length} Active
-        </Badge>
+        <div className="flex items-center space-x-4">
+          {agents.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResetAll}
+              disabled={resetTasksMutation.isPending}
+              className="border-red-500/50 text-red-500 hover:bg-red-500/10"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Reset All Agents
+            </Button>
+          )}
+          <Badge variant="glow" className="text-lg px-4 py-1">
+            {agents.filter(a => a.status === 'running').length} Active
+          </Badge>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4">
@@ -75,14 +106,49 @@ interface AgentCardProps {
 }
 
 function AgentCard({ agent, onLaunchITerm }: AgentCardProps) {
-  const isRunning = agent.status === 'running';
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update time every second for live duration counter
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, []);
+
+  const getStatusColor = () => {
+    switch (agent.status) {
+      case 'running':
+        return 'bg-green-500';
+      case 'completed':
+        return 'bg-blue-500';
+      case 'failed':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  const getStatusIcon = () => {
+    switch (agent.status) {
+      case 'running':
+        return <Cpu className="w-4 h-4 animate-spin" />;
+      case 'completed':
+        return <CheckCircle className="w-4 h-4" />;
+      case 'failed':
+        return <XCircle className="w-4 h-4" />;
+      default:
+        return <CircleDot className="w-4 h-4" />;
+    }
+  };
 
   return (
     <Card className="bg-deep-indigo/50 border-electric-cyan/20 hover:border-electric-cyan/40 transition-all hover:shadow-[0_0_30px_rgba(0,255,255,0.3)]">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className={`w-3 h-3 rounded-full ${isRunning ? 'bg-green-500' : 'bg-yellow-500'} animate-pulse`} />
+            <div className={`w-3 h-3 rounded-full ${getStatusColor()} ${agent.status === 'running' ? 'animate-pulse' : ''}`} />
             <CardTitle className="text-lg">{agent.task_title}</CardTitle>
           </div>
           <Button
@@ -98,7 +164,7 @@ function AgentCard({ agent, onLaunchITerm }: AgentCardProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-1 gap-3 text-sm">
           <div className="flex items-center space-x-2">
             <GitBranch className="w-4 h-4 text-electric-cyan" />
             <span className="text-muted-foreground">Branch:</span>
@@ -107,9 +173,28 @@ function AgentCard({ agent, onLaunchITerm }: AgentCardProps) {
           <div className="flex items-center space-x-2">
             <Clock className="w-4 h-4 text-electric-cyan" />
             <span className="text-muted-foreground">Started:</span>
-            <span>{formatDistanceToNow(new Date(agent.started_at), { addSuffix: true })}</span>
+            <span className="font-mono">{formatStartTime(new Date(agent.started_at))}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Clock className="w-4 h-4 text-yellow-400" />
+            <span className="text-muted-foreground">Running:</span>
+            <span className="font-mono text-yellow-400">{formatRunningDuration(new Date(agent.started_at), currentTime)}</span>
           </div>
         </div>
+        
+        {agent.status === 'running' && (
+          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+            <Cpu className="w-4 h-4 animate-pulse text-green-500" />
+            <span>Agent is actively working...</span>
+          </div>
+        )}
+        
+        {agent.status === 'completed' && (
+          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+            <CheckCircle className="w-4 h-4 text-blue-500" />
+            <span>Task completed, waiting for merge</span>
+          </div>
+        )}
 
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
@@ -120,8 +205,12 @@ function AgentCard({ agent, onLaunchITerm }: AgentCardProps) {
         </div>
 
         <div className="flex items-center space-x-2 text-sm">
-          <Badge variant={isRunning ? 'default' : 'secondary'}>
-            {agent.status}
+          <Badge 
+            variant={agent.status === 'running' ? 'default' : agent.status === 'completed' ? 'success' : 'destructive'}
+            className="flex items-center space-x-1"
+          >
+            {getStatusIcon()}
+            <span className="capitalize">{agent.status}</span>
           </Badge>
           <Badge variant="outline" className="font-mono text-xs">
             {agent.session_name}
@@ -147,18 +236,27 @@ function AgentCard({ agent, onLaunchITerm }: AgentCardProps) {
   );
 }
 
-// Helper function for date formatting
-function formatDistanceToNow(date: Date, options?: { addSuffix?: boolean }): string {
-  const now = new Date();
-  const diffInMs = now.getTime() - date.getTime();
-  const diffInMinutes = Math.floor(diffInMs / 60000);
+// Helper functions for date formatting
+function formatStartTime(date: Date): string {
+  return date.toLocaleTimeString('en-US', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false 
+  });
+}
+
+function formatRunningDuration(startTime: Date, currentTime: Date): string {
+  const diffInMs = currentTime.getTime() - startTime.getTime();
+  const diffInSeconds = Math.floor(diffInMs / 1000);
   
-  if (diffInMinutes < 1) return 'just now';
-  if (diffInMinutes < 60) return `${diffInMinutes}m${options?.addSuffix ? ' ago' : ''}`;
+  const hours = Math.floor(diffInSeconds / 3600);
+  const minutes = Math.floor((diffInSeconds % 3600) / 60);
+  const seconds = diffInSeconds % 60;
   
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours}h${options?.addSuffix ? ' ago' : ''}`;
-  
-  const diffInDays = Math.floor(diffInHours / 24);
-  return `${diffInDays}d${options?.addSuffix ? ' ago' : ''}`;
+  if (hours > 0) {
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  } else {
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
 }

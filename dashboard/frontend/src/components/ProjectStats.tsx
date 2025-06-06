@@ -46,7 +46,7 @@ export function ProjectStats({ projectId }: ProjectStatsProps) {
   // Prepare data for charts
   const taskDistribution = [
     { name: 'Unclaimed', value: stats.unclaimed_tasks, color: '#6b7280' },
-    { name: 'Claimed', value: stats.claimed_tasks, color: '#3b82f6' },
+    { name: 'Up Next', value: stats.up_next_tasks, color: '#3b82f6' },
     { name: 'In Progress', value: stats.in_progress_tasks, color: '#eab308' },
     { name: 'Completed', value: stats.completed_tasks, color: '#22c55e' },
     { name: 'Merged', value: stats.merged_tasks, color: '#a855f7' },
@@ -54,7 +54,7 @@ export function ProjectStats({ projectId }: ProjectStatsProps) {
 
   const progressData = [
     { name: 'TODO', value: stats.unclaimed_tasks },
-    { name: 'WIP', value: stats.claimed_tasks + stats.in_progress_tasks },
+    { name: 'WIP', value: stats.up_next_tasks + stats.in_progress_tasks },
     { name: 'Done', value: stats.completed_tasks + stats.merged_tasks },
   ];
 

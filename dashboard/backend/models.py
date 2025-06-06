@@ -10,7 +10,7 @@ from enum import Enum
 class TaskStatus(str, Enum):
     """Task status enumeration"""
     UNCLAIMED = "unclaimed"
-    CLAIMED = "claimed"
+    UP_NEXT = "up_next"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     MERGED = "merged"
@@ -19,11 +19,19 @@ class TaskStatus(str, Enum):
 class Task(BaseModel):
     """Task model"""
     id: str
+    task_id: Optional[int] = None  # Auto-incrementing task ID per project
     title: str
     description: Optional[str] = None
+    prompt: Optional[str] = None  # Custom agent prompt for this task
     status: TaskStatus = TaskStatus.UNCLAIMED
     branch: str
     session: Optional[str] = None
+    dependencies: List[str] = []  # List of task IDs that must be completed first
+    priority: int = 0  # Higher priority tasks are assigned first (0 = normal, 1+ = higher)
+    merge_order: int = 0  # Explicit merge sequence order
+    exclusive_files: List[str] = []  # Files only this task should modify
+    shared_files: List[str] = []  # Files that might be modified (requires coordination)
+    initialization_deps: List[str] = []  # Tasks whose output is needed for setup
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
     completed_at: Optional[datetime] = None
@@ -37,10 +45,12 @@ class Agent(BaseModel):
     task_id: str
     task_title: str
     branch: str
-    status: str = "running"
+    status: str = "running"  # "running", "completed", "failed"
     progress: int = 0
     started_at: datetime = Field(default_factory=datetime.now)
     logs: List[str] = []
+    last_activity: Optional[datetime] = None
+    output_preview: Optional[str] = None
 
 
 class Project(BaseModel):
@@ -57,6 +67,7 @@ class Project(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
     git_remote: Optional[str] = None
+    is_git_repo: Optional[bool] = None      # Whether the project path is a Git repository
     
     class Config:
         json_encoders = {
@@ -68,7 +79,7 @@ class ProjectStats(BaseModel):
     """Project statistics"""
     total_tasks: int = 0
     unclaimed_tasks: int = 0
-    claimed_tasks: int = 0
+    up_next_tasks: int = 0
     in_progress_tasks: int = 0
     completed_tasks: int = 0
     merged_tasks: int = 0

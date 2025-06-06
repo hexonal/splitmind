@@ -39,6 +39,7 @@ class TaskFormatter:
             
             task = {
                 'title': lines[0].strip(),
+                'task_id': None,
                 'status': 'unclaimed',
                 'branch': None,
                 'session': 'null'
@@ -47,7 +48,12 @@ class TaskFormatter:
             # Parse task fields
             for line in lines[1:]:
                 line = line.strip()
-                if line.startswith('- status:'):
+                if line.startswith('- task_id:'):
+                    try:
+                        task['task_id'] = int(line.split(':', 1)[1].strip())
+                    except ValueError:
+                        pass
+                elif line.startswith('- status:'):
                     task['status'] = line.split(':', 1)[1].strip()
                 elif line.startswith('- branch:'):
                     task['branch'] = line.split(':', 1)[1].strip()
@@ -69,9 +75,21 @@ class TaskFormatter:
         """Format tasks into standardized markdown"""
         output = ["# tasks.md\n"]
         
+        # Assign task IDs to tasks that don't have them
+        max_task_id = 0
+        for task in self.tasks:
+            if task['task_id']:
+                max_task_id = max(max_task_id, task['task_id'])
+        
+        for task in self.tasks:
+            if task['task_id'] is None:
+                max_task_id += 1
+                task['task_id'] = max_task_id
+        
         for task in self.tasks:
             output.append(f"## Task: {task['title']}")
             output.append("")
+            output.append(f"- task_id: {task['task_id']}")
             output.append(f"- status: {task['status']}")
             output.append(f"- branch: {task['branch']}")
             output.append(f"- session: {task['session']}")

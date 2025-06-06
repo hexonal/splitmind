@@ -11,15 +11,20 @@ export interface Project {
   created_at: string;
   updated_at: string;
   git_remote?: string;
+  is_git_repo?: boolean;
 }
 
 export interface Task {
   id: string;
+  task_id?: number;
   title: string;
   description?: string;
+  prompt?: string;
   status: TaskStatus;
   branch: string;
   session?: string;
+  dependencies?: string[];
+  priority?: number;
   created_at: string;
   updated_at: string;
   completed_at?: string;
@@ -28,7 +33,7 @@ export interface Task {
 
 export enum TaskStatus {
   UNCLAIMED = "unclaimed",
-  CLAIMED = "claimed",
+  UP_NEXT = "up_next",
   IN_PROGRESS = "in_progress",
   COMPLETED = "completed",
   MERGED = "merged",
@@ -49,7 +54,7 @@ export interface Agent {
 export interface ProjectStats {
   total_tasks: number;
   unclaimed_tasks: number;
-  claimed_tasks: number;
+  up_next_tasks: number;
   in_progress_tasks: number;
   completed_tasks: number;
   merged_tasks: number;

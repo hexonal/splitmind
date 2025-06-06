@@ -24,6 +24,50 @@ class ClaudeIntegration:
     def __init__(self):
         self.commands_dir = Path(__file__).parent.parent.parent / ".claude" / "commands"
         
+    def generate_task_breakdown(self, project_info: Dict, api_key: Optional[str] = None, model: Optional[str] = None) -> Dict:
+        """
+        Generate a structured task breakdown using the Task Master AI approach.
+        
+        Args:
+            project_info: Dictionary containing project details
+            api_key: Anthropic API key (optional, will use default if not provided)
+            model: Model to use (optional, will use default if not provided)
+        
+        Returns:
+            Dictionary containing:
+                - plan: Generated project plan
+                - task_breakdown: Structured wave-based task breakdown
+                - suggested_tasks: List of tasks for backward compatibility
+                - success: Boolean indicating if the request was successful
+                - error: Error message if request failed
+        """
+        # Update the client with the API key if provided
+        if api_key:
+            anthropic_client.api_key = api_key
+        
+        # Call the Anthropic API with task master prompt
+        result = anthropic_client.generate_task_breakdown(project_info, model)
+        
+        # If successful, save both plan and task breakdown
+        if result.get('success'):
+            project_path = project_info.get('project_path', '')
+            if project_path:
+                prompt_dir = Path(project_path) / ".splitmind" / "plans"
+                prompt_dir.mkdir(parents=True, exist_ok=True)
+                
+                plan_file = prompt_dir / "generated-plan.md"
+                with open(plan_file, 'w') as f:
+                    f.write(result['plan'])
+                
+                task_breakdown_file = prompt_dir / "task-breakdown.md"
+                with open(task_breakdown_file, 'w') as f:
+                    f.write(result.get('task_breakdown', ''))
+                
+                result['plan_file'] = str(plan_file)
+                result['task_breakdown_file'] = str(task_breakdown_file)
+        
+        return result
+
     def generate_plan(self, project_info: Dict, api_key: Optional[str] = None, model: Optional[str] = None) -> Dict:
         """
         Generate a project plan using the Anthropic API.

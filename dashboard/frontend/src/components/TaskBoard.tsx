@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, GitBranch, RefreshCw } from 'lucide-react';
+import { Plus, GitBranch, Wifi, WifiOff } from 'lucide-react';
 import { api } from '@/services/api';
-import { Task, TaskStatus } from '@/types';
-import { motion } from 'framer-motion';
+import { Task, TaskStatus, WebSocketMessage } from '@/types';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AddTaskDialog } from '@/components/AddTaskDialog';
 import { TaskDetailsDialog } from '@/components/TaskDetailsDialog';
+import { useWebSocket } from '@/hooks/useWebSocket';
 
 interface TaskBoardProps {
   projectId: string;
@@ -17,7 +18,7 @@ interface TaskBoardProps {
 
 const statusColumns = [
   { id: TaskStatus.UNCLAIMED, title: 'TODO', color: 'bg-gray-500' },
-  { id: TaskStatus.CLAIMED, title: 'CLAIMED', color: 'bg-blue-500' },
+  { id: TaskStatus.UP_NEXT, title: 'UP NEXT', color: 'bg-blue-500' },
   { id: TaskStatus.IN_PROGRESS, title: 'WORKING', color: 'bg-yellow-500' },
   { id: TaskStatus.COMPLETED, title: 'DONE', color: 'bg-green-500' },
   { id: TaskStatus.MERGED, title: 'MERGED', color: 'bg-purple-500' },
@@ -28,11 +29,45 @@ export function TaskBoard({ projectId }: TaskBoardProps) {
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskDetailsOpen, setIsTaskDetailsOpen] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
 
-  // Fetch tasks
-  const { data: tasks = [], isLoading, refetch } = useQuery({
+  // WebSocket handler for real-time updates
+  const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
+    if (message.project_id !== projectId) return;
+
+    switch (message.type) {
+      case 'task_created':
+      case 'task_updated':
+      case 'task_deleted':
+      case 'tasks_reset':
+      case 'task_status_changed':
+        // Invalidate and refetch tasks immediately
+        queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
+        break;
+      case 'agent_status_update':
+      case 'agent_spawned':
+        // Also refresh tasks when agent status changes
+        queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
+        break;
+    }
+  }, [projectId, queryClient]);
+
+  // Track WebSocket connection status
+  useEffect(() => {
+    // For now, we'll show as connected since WebSocket auto-reconnects
+    // The websocket service handles reconnection automatically
+    setIsConnected(true);
+  }, []);
+
+  // Connect to WebSocket
+  useWebSocket(handleWebSocketMessage);
+
+  // Fetch tasks with auto-refetch
+  const { data: tasks = [], isLoading } = useQuery({
     queryKey: ['tasks', projectId],
     queryFn: () => api.getTasks(projectId),
+    refetchInterval: 5000, // Poll every 5 seconds as backup
+    refetchIntervalInBackground: true,
   });
 
   // Update task mutation
@@ -44,9 +79,18 @@ export function TaskBoard({ projectId }: TaskBoardProps) {
     },
   });
 
-  // Group tasks by status
+  // Group tasks by status and sort by priority and task_id
   const tasksByStatus = statusColumns.reduce((acc, column) => {
-    acc[column.id] = tasks.filter(task => task.status === column.id);
+    acc[column.id] = tasks
+      .filter(task => task.status === column.id)
+      .sort((a, b) => {
+        // First sort by priority (lower number = higher priority)
+        if (a.priority !== b.priority) {
+          return (a.priority || 10) - (b.priority || 10);
+        }
+        // Then by task_id to maintain creation order
+        return (a.task_id || 0) - (b.task_id || 0);
+      });
     return acc;
   }, {} as Record<TaskStatus, Task[]>);
 
@@ -76,12 +120,17 @@ export function TaskBoard({ projectId }: TaskBoardProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-electric-cyan">Task Board</h2>
+        <div className="flex items-center space-x-3">
+          <h2 className="text-2xl font-bold text-electric-cyan">Task Board</h2>
+          <Badge 
+            variant={isConnected ? "glow" : "destructive"} 
+            className="flex items-center space-x-1"
+          >
+            {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+            <span className="text-xs">{isConnected ? 'Live' : 'Offline'}</span>
+          </Badge>
+        </div>
         <div className="flex items-center space-x-2">
-          <Button variant="glow" size="sm" onClick={() => refetch()}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
           <Button variant="glow" size="sm" onClick={() => setIsAddingTask(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Add Task
@@ -107,23 +156,34 @@ export function TaskBoard({ projectId }: TaskBoardProps) {
             </div>
 
             <ScrollArea className="h-[600px]">
-              <div className="space-y-2 pr-3">
-                {tasksByStatus[column.id].map((task, index) => (
-                  <motion.div
-                    key={task.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                  >
-                    <TaskCard
-                      task={task}
-                      onDragStart={handleDragStart}
-                      columnColor={column.color}
-                      onClick={() => handleTaskClick(task)}
-                    />
-                  </motion.div>
-                ))}
-              </div>
+              <AnimatePresence mode="popLayout">
+                <div className="space-y-2 pr-3">
+                  {tasksByStatus[column.id].map((task) => (
+                    <motion.div
+                      key={task.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{
+                        opacity: { duration: 0.2 },
+                        layout: {
+                          type: "spring",
+                          stiffness: 350,
+                          damping: 25
+                        }
+                      }}
+                    >
+                      <TaskCard
+                        task={task}
+                        onDragStart={handleDragStart}
+                        columnColor={column.color}
+                        onClick={() => handleTaskClick(task)}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </AnimatePresence>
             </ScrollArea>
           </div>
         ))}
@@ -153,12 +213,27 @@ interface TaskCardProps {
 }
 
 function TaskCard({ task, onDragStart, columnColor, onClick }: TaskCardProps) {
+  const [isUpdating, setIsUpdating] = useState(false);
+  const prevStatusRef = useRef(task.status);
+
+  // Flash animation only when status actually changes
+  useEffect(() => {
+    if (prevStatusRef.current !== task.status) {
+      setIsUpdating(true);
+      const timer = setTimeout(() => setIsUpdating(false), 300);
+      prevStatusRef.current = task.status;
+      return () => clearTimeout(timer);
+    }
+  }, [task.status]);
+
   return (
     <Card
       draggable
       onDragStart={(e) => onDragStart(e, task.id)}
       onClick={onClick}
-      className="group cursor-move bg-deep-indigo/50 border-electric-cyan/20 hover:border-electric-cyan/50 transition-all hover:shadow-[0_0_20px_rgba(0,255,255,0.2)]"
+      className={`group cursor-move bg-deep-indigo/50 border-electric-cyan/20 hover:border-electric-cyan/50 transition-all hover:shadow-[0_0_20px_rgba(0,255,255,0.2)] ${
+        isUpdating ? 'animate-pulse border-electric-cyan' : ''
+      }`}
     >
       <CardHeader className="p-3">
         <CardTitle className="text-sm font-medium line-clamp-2">

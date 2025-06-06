@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Rocket, Code2, GitBranch, Cpu } from 'lucide-react';
+import { Sparkles, Rocket, Code2, GitBranch, Cpu, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CreateProjectDialog } from '@/components/CreateProjectDialog';
+import { OnboardingModal } from '@/components/OnboardingModal';
 
 export function WelcomeScreen() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const features = [
     { icon: <Code2 className="w-8 h-8" />, title: 'AI-Powered Development', desc: 'Spawn multiple AI agents to work on tasks' },
@@ -77,6 +79,7 @@ export function WelcomeScreen() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
+          className="space-y-4"
         >
           <CreateProjectDialog 
             open={dialogOpen} 
@@ -92,8 +95,26 @@ export function WelcomeScreen() {
               </Button>
             }
           />
+          
+          <div className="text-center">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setShowOnboarding(true)}
+              className="text-muted-foreground hover:text-white"
+            >
+              <HelpCircle className="w-4 h-4 mr-2" />
+              Need help getting started?
+            </Button>
+          </div>
         </motion.div>
       </motion.div>
+      
+      {/* Onboarding Modal */}
+      <OnboardingModal 
+        isOpen={showOnboarding} 
+        onClose={() => setShowOnboarding(false)} 
+      />
     </div>
   );
 }

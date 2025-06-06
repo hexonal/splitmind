@@ -1,71 +1,136 @@
 # tasks.md
 
-## Task: Create dashboard backend API with FastAPI
+## Task: Framework
+
+- status: completed
+- branch: framework
+- session: null
+- description: Set up the base framework for the project
+- dependencies: []
+- priority: 2
+
+## Task: Styling
+
+- status: completed
+- branch: styling
+- session: null
+- description: Implement the styling system and design tokens
+- dependencies: []
+- priority: 2
+
+## Task: UI Components
 
 - status: unclaimed
-- branch: backend-api
+- branch: ui-components
 - session: null
-- description: Build FastAPI server with endpoints for tasks, agents, orchestrator control, and WebSocket support
+- description: Build the core UI component library
+- dependencies: [framework, styling]
+- priority: 1
 
-## Task: Create React frontend structure
+## Task: Typography
 
 - status: unclaimed
-- branch: frontend-setup
+- branch: typography
 - session: null
-- description: Set up React app with TypeScript, Tailwind CSS, and component structure
+- description: Set up typography system and font scales
+- dependencies: [styling]
+- priority: 0
 
-## Task: Implement task management system
+## Task: Icons
 
 - status: unclaimed
-- branch: task-management
+- branch: icons
 - session: null
-- description: Create task board UI with CRUD operations and drag-and-drop functionality
+- description: Implement icon system and library
+- dependencies: [styling]
+- priority: 0
 
-## Task: Build agent monitoring dashboard
+## Task: Package Manager
+
+- status: merged
+- branch: package-manager
+- session: null
+- description: Configure package manager and dependency management
+- dependencies: []
+- priority: 2
+
+## Task: Code Quality
+
+- status: completed
+- branch: code-quality
+- session: null
+- description: Set up linting, formatting, and code quality tools
+- dependencies: []
+- priority: 1
+
+## Task: Type Safety
 
 - status: unclaimed
-- branch: agent-monitor
+- branch: type-safety
 - session: null
-- description: Real-time agent status display with progress bars and metrics visualization
+- description: Implement TypeScript and type checking
+- dependencies: [framework]
+- priority: 1
 
-## Task: Add orchestrator control panel
+## Task: Version Control
 
 - status: unclaimed
-- branch: orchestrator-control
+- branch: version-control
 - session: null
-- description: UI controls to start/stop orchestrator and configure max agents
+- description: Configure Git workflows and branching strategy
+- dependencies: []
+- priority: 0
 
-## Task: Implement iTerm launcher integration
+## Task: Deployment
 
 - status: unclaimed
-- branch: iterm-integration
+- branch: deployment
 - session: null
-- description: Add buttons to launch iTerm sessions for each running tmux agent
+- description: Set up deployment pipeline and hosting
+- dependencies: [framework]
+- priority: 0
 
-## Task: Create launch script
+## Task: Static Generation
 
 - status: unclaimed
-- branch: launch-script
+- branch: static-generation
 - session: null
-- description: Python script to start the dashboard with single command, handling both backend and frontend
+- description: Implement static site generation capabilities
+- dependencies: [framework]
+- priority: 0
 
-## Task: Add WebSocket real-time updates
+## Task: Component Architecture
 
 - status: unclaimed
-- branch: websocket-updates
+- branch: component-architecture
 - session: null
-- description: Implement WebSocket connections for live task and agent status updates
+- description: Design and implement component architecture patterns
+- dependencies: [framework, ui-components]
+- priority: 0
 
-## Task: Style with command center theme
+## Task: Responsive Design
 
 - status: unclaimed
-- branch: command-center-theme
+- branch: responsive-design
 - session: null
-- description: Apply deep indigo, electric cyan, and black color scheme with dark/light mode support
+- description: Implement responsive design system and breakpoints
+- dependencies: [framework, styling]
+- priority: 0
 
-## Task: Add error handling and notifications
+## Task: Performance
 
 - status: unclaimed
-- branch: error-handling
+- branch: performance
 - session: null
-- description: Implement proper error handling, loading states, and user notifications
+- description: Optimize application performance and loading times
+- dependencies: [framework, static-generation]
+- priority: 0
+
+## Task: GitHub API Rate Limits
+
+- status: unclaimed
+- branch: github-api-rate-limits
+- session: null
+- description: Handle GitHub API rate limiting and caching
+- dependencies: [framework]
+- priority: 0

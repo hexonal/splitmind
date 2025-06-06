@@ -76,15 +76,22 @@ class ApiService {
   }
 
   updateTask = async (projectId: string, taskId: string, updates: Partial<Task>): Promise<Task> => {
-    return this.request(`/projects/${projectId}/tasks/${taskId}`, {
+    console.log('Updating task:', { projectId, taskId, updates });
+    return this.request(`/projects/${projectId}/tasks/${encodeURIComponent(taskId)}`, {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
   }
 
   deleteTask = async (projectId: string, taskId: string): Promise<void> => {
-    await this.request(`/projects/${projectId}/tasks/${taskId}`, {
+    await this.request(`/projects/${projectId}/tasks/${encodeURIComponent(taskId)}`, {
       method: 'DELETE',
+    });
+  }
+
+  mergeTask = async (projectId: string, taskId: string): Promise<void> => {
+    await this.request(`/projects/${projectId}/tasks/${encodeURIComponent(taskId)}/merge`, {
+      method: 'POST',
     });
   }
 
@@ -95,6 +102,23 @@ class ApiService {
 
   launchITerm = async (projectId: string, agentId: string): Promise<void> => {
     await this.request(`/projects/${projectId}/agents/${agentId}/launch-iterm`, {
+      method: 'POST',
+    });
+  }
+
+  resetAgentTasks = async (projectId: string): Promise<{
+    success: boolean;
+    reset_count: number;
+    killed_sessions: string[];
+    message: string;
+  }> => {
+    return this.request(`/projects/${projectId}/reset-agent-tasks`, {
+      method: 'POST',
+    });
+  }
+
+  resetProject = async (projectId: string): Promise<{ message: string }> => {
+    return this.request(`/projects/${projectId}/reset`, {
       method: 'POST',
     });
   }
@@ -137,6 +161,80 @@ class ApiService {
     return this.request(`/projects/${projectId}/generate-plan`, {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  }
+
+  generateTaskBreakdown = async (projectId: string, data: {
+    project_overview: string;
+    initial_prompt: string;
+  }): Promise<{ 
+    plan: string; 
+    task_breakdown: string; 
+    tasks_created: number; 
+    message: string; 
+    cost_info?: any; 
+    usage?: any 
+  }> => {
+    return this.request(`/projects/${projectId}/generate-task-breakdown`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Git Management
+  getGitStatus = async (projectId: string): Promise<{
+    is_git_repo: boolean;
+    current_branch?: string;
+    has_changes?: boolean;
+    remote_url?: string;
+    error?: string;
+  }> => {
+    return this.request(`/projects/${projectId}/git-status`);
+  }
+
+  initGitRepo = async (projectId: string): Promise<{
+    success: boolean;
+    message: string;
+    gitignore_created: boolean;
+  }> => {
+    return this.request(`/projects/${projectId}/init-git`, {
+      method: 'POST',
+    });
+  }
+
+  // MCP Diagnostics
+  checkClaudeCLI = async (): Promise<{
+    installed: boolean;
+    path?: string;
+    version?: string;
+    error?: string;
+  }> => {
+    return this.request('/mcp/check-cli');
+  }
+
+  listMCPs = async (): Promise<{
+    success: boolean;
+    mcps: Array<{
+      name: string;
+      transport: string;
+      command: string;
+      global: boolean;
+    }>;
+    raw_output?: string;
+    error?: string;
+  }> => {
+    return this.request('/mcp/list');
+  }
+
+  installMCP = async (name: string, command?: string): Promise<{
+    success: boolean;
+    message?: string;
+    output?: string;
+    error?: string;
+  }> => {
+    return this.request('/mcp/install', {
+      method: 'POST',
+      body: JSON.stringify({ name, command }),
     });
   }
 }
