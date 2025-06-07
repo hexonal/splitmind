@@ -25,11 +25,27 @@ from .orchestrator import OrchestratorManager
 from .websocket_manager import WebSocketManager
 from .claude_integration import claude
 
+# Import A2AMCP orchestrator
+try:
+    from .a2amcp_orchestrator import A2AMCPOrchestrator, is_a2amcp_available
+    a2amcp_available = True
+except ImportError:
+    a2amcp_available = False
+    is_a2amcp_available = lambda: False
+
 # WebSocket manager
 ws_manager = WebSocketManager()
 
-# Orchestrator manager
-orchestrator = OrchestratorManager(ws_manager)
+# Orchestrator manager - use A2AMCP version if available
+if a2amcp_available and is_a2amcp_available():
+    print("🤝 Using A2AMCP-enhanced orchestrator for agent coordination")
+    orchestrator = A2AMCPOrchestrator(ws_manager)
+else:
+    if a2amcp_available:
+        print("⚠️  A2AMCP SDK available but server not running. Using standard orchestrator.")
+    else:
+        print("📦 A2AMCP SDK not installed. Using standard orchestrator.")
+    orchestrator = OrchestratorManager(ws_manager)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -664,6 +680,19 @@ async def check_orchestrator_tasks():
         return {"message": "Task check completed"}
     else:
         raise HTTPException(status_code=400, detail="No active project")
+
+
+@app.get("/api/projects/{project_id}/coordination-stats")
+async def get_coordination_stats(project_id: str):
+    """Get A2AMCP coordination statistics for a project"""
+    if hasattr(orchestrator, 'get_coordination_stats'):
+        stats = await orchestrator.get_coordination_stats(project_id)
+        return stats
+    else:
+        return {
+            "enabled": False,
+            "message": "A2AMCP coordination not available"
+        }
 
 
 # ============================================================================

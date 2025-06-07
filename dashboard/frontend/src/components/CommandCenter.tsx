@@ -6,6 +6,7 @@ import { TaskBoard } from '@/components/TaskBoard';
 import { AgentMonitor } from '@/components/AgentMonitor';
 import { ProjectStats } from '@/components/ProjectStats';
 import { ProjectSettings } from '@/components/ProjectSettings';
+import { AgentCoordination } from '@/components/AgentCoordination';
 import { motion } from 'framer-motion';
 import { LayoutGrid, Cpu, BarChart3, Settings } from 'lucide-react';
 
@@ -19,22 +20,31 @@ export function CommandCenter({ project }: CommandCenterProps) {
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="grid grid-cols-12 gap-6">
-        {/* Left Sidebar - Orchestrator Control */}
-        <motion.div 
-          className="col-span-3"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <OrchestratorControl projectId={project.id} />
-        </motion.div>
+        {/* Left Column - Orchestrator Control & Coordination */}
+        <div className="col-span-3 space-y-6">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <OrchestratorControl projectId={project.id} />
+          </motion.div>
+          
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <AgentCoordination projectId={project.id} />
+          </motion.div>
+        </div>
 
         {/* Main Content Area */}
         <motion.div 
           className="col-span-9"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.3 }}
         >
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList className="bg-deep-indigo/50 border border-electric-cyan/20">
