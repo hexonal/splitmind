@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Project } from '@/types';
 import {
   Select,
@@ -8,21 +7,21 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { FolderOpen, Plus } from 'lucide-react';
-import { ProjectSetupWizard } from '@/components/ProjectSetupWizard';
+import { FolderOpen, Settings } from 'lucide-react';
 
 interface ProjectSelectorProps {
   projects: Project[];
   selectedProjectId: string | null;
   onSelectProject: (projectId: string) => void;
+  onOpenProjectManager?: () => void;
 }
 
 export function ProjectSelector({
   projects,
   selectedProjectId,
   onSelectProject,
+  onOpenProjectManager,
 }: ProjectSelectorProps) {
-  const [wizardOpen, setWizardOpen] = useState(false);
   
   return (
     <div className="flex items-center space-x-2">
@@ -51,19 +50,18 @@ export function ProjectSelector({
         </SelectContent>
       </Select>
       
-      <Button 
-        variant="glow" 
-        size="icon"
-        onClick={() => setWizardOpen(true)}
-        title="Add New Project"
-      >
-        <Plus className="w-4 h-4" />
-      </Button>
-      
-      <ProjectSetupWizard 
-        open={wizardOpen} 
-        onOpenChange={setWizardOpen}
-      />
+      {onOpenProjectManager && (
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={onOpenProjectManager}
+          className="text-muted-foreground hover:text-white hover:bg-electric-cyan/10"
+          title="Project Manager"
+        >
+          <Settings className="w-4 h-4 mr-2" />
+          Projects
+        </Button>
+      )}
     </div>
   );
 }

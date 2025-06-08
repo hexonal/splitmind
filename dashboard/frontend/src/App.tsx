@@ -15,7 +15,7 @@ import { GlobalSettings } from '@/components/GlobalSettings';
 import { GlobalFooter } from '@/components/GlobalFooter';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { HelpCircle, FolderOpen, Settings } from 'lucide-react';
+import { HelpCircle, Settings } from 'lucide-react';
 
 function App() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -78,25 +78,27 @@ function App() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
               <Logo />
-              {projects.length > 0 && (
+              {projects.length > 0 ? (
                 <ProjectSelector
                   projects={projects}
                   selectedProjectId={selectedProjectId}
                   onSelectProject={setSelectedProjectId}
+                  onOpenProjectManager={() => setShowProjectManager(true)}
                 />
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowProjectManager(true)}
+                  className="text-muted-foreground hover:text-white hover:bg-electric-cyan/10"
+                  title="Project Manager"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Project Manager
+                </Button>
               )}
             </div>
             <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowProjectManager(true)}
-                className="text-muted-foreground hover:text-white hover:bg-electric-cyan/10"
-                title="Manage Projects"
-              >
-                <FolderOpen className="h-4 w-4 mr-2" />
-                Manage Projects
-              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -163,7 +165,7 @@ function App() {
         <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <FolderOpen className="w-5 h-5 text-electric-cyan" />
+              <Settings className="w-5 h-5 text-electric-cyan" />
               Project Manager
             </DialogTitle>
           </DialogHeader>
