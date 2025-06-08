@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CreateProjectDialog } from '@/components/CreateProjectDialog';
+import { ProjectSetupWizard } from '@/components/ProjectSetupWizard';
 import { 
   FolderOpen, 
   Trash2, 
@@ -488,8 +488,8 @@ export function ProjectManager({ onSelectProject }: ProjectManagerProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Create Project Dialog */}
-      <CreateProjectDialog
+      {/* Create Project Wizard */}
+      <ProjectSetupWizard
         open={showCreateProject}
         onOpenChange={setShowCreateProject}
       />
