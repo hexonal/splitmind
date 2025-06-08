@@ -320,24 +320,55 @@ Remember: Coordination is MANDATORY. If you cannot use these tools, stop immedia
             project = Project(self.a2amcp_client, project_id)
             
             # Get active agents
-            agents = await project.get_active_agents()
+            try:
+                agents = await project.get_active_agents()
+            except Exception as e:
+                logger.error(f"Error getting active agents: {e}")
+                agents = {}
             
             # Get all todos
-            all_todos = await project.todos.get_all()
+            try:
+                all_todos = await project.todos.get_all()
+            except Exception as e:
+                logger.error(f"Error getting todos: {e}")
+                all_todos = {}
             
             # Get interfaces
-            interfaces = await project.interfaces.list()
+            try:
+                interfaces = await project.interfaces.list()
+            except Exception as e:
+                logger.error(f"Error getting interfaces: {e}")
+                interfaces = {}
             
             # Get recent changes
-            recent_changes = await project.get_recent_changes(limit=50)
+            try:
+                recent_changes = await project.get_recent_changes(limit=50)
+            except Exception as e:
+                logger.error(f"Error getting recent changes: {e}")
+                recent_changes = []
             
             # Calculate stats
-            total_todos = sum(len(data.get('todos', [])) for data in all_todos.values())
-            completed_todos = sum(
-                1 for data in all_todos.values() 
-                for todo in data.get('todos', []) 
-                if todo.get('status') == 'completed'
-            )
+            total_todos = 0
+            completed_todos = 0
+            
+            # Parse todo data safely
+            for data in all_todos.values():
+                try:
+                    if isinstance(data, str):
+                        parsed_data = json.loads(data)
+                    else:
+                        parsed_data = data
+                    
+                    todos = parsed_data.get('todos', []) if isinstance(parsed_data, dict) else []
+                    total_todos += len(todos)
+                    
+                    for todo in todos:
+                        if isinstance(todo, dict) and todo.get('status') == 'completed':
+                            completed_todos += 1
+                            
+                except (json.JSONDecodeError, TypeError) as e:
+                    logger.warning(f"Failed to parse todo data: {e}")
+                    continue
             
             return {
                 "enabled": True,

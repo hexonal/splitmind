@@ -10,13 +10,19 @@ import { Logo } from '@/components/Logo';
 import { WelcomeScreen } from '@/components/WelcomeScreen';
 import { OnboardingModal } from '@/components/OnboardingModal';
 import { HelpCenter } from '@/components/HelpCenter';
+import { ProjectManager } from '@/components/ProjectManager';
+import { GlobalSettings } from '@/components/GlobalSettings';
+import { GlobalFooter } from '@/components/GlobalFooter';
 import { Button } from '@/components/ui/button';
-import { HelpCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { HelpCircle, FolderOpen, Settings } from 'lucide-react';
 
 function App() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showHelpCenter, setShowHelpCenter] = useState(false);
+  const [showProjectManager, setShowProjectManager] = useState(false);
+  const [showGlobalSettings, setShowGlobalSettings] = useState(false);
 
   // Fetch projects
   const { data: projects = [], refetch: refetchProjects, isLoading, error } = useQuery({
@@ -28,6 +34,9 @@ function App() {
 
   console.log('Query state:', { projects, isLoading, error });
 
+  // Show loading state only on initial load
+  const showLoading = isLoading && projects.length === 0;
+
   // Handle WebSocket messages
   useWebSocket((message: WebSocketMessage) => {
     console.log('WebSocket message:', message);
@@ -38,15 +47,14 @@ function App() {
     }
   });
 
-  // Select first project by default
+  // Show project manager by default if user has projects (unless first-time)
   useEffect(() => {
-    if (projects.length > 0 && !selectedProjectId) {
-      setSelectedProjectId(projects[0].id);
+    const hasSeenOnboarding = localStorage.getItem('has_seen_onboarding');
+    if (projects.length > 0 && hasSeenOnboarding && !selectedProjectId && !showLoading) {
+      // Show project manager as default page for returning users
+      setShowProjectManager(true);
     }
-  }, [projects, selectedProjectId]);
-
-  // Show loading state only on initial load
-  const showLoading = isLoading && projects.length === 0;
+  }, [projects, selectedProjectId, showLoading]);
   
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
@@ -60,7 +68,7 @@ function App() {
   }, [showLoading]);
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white">
+    <div className="min-h-screen bg-dark-bg text-white flex flex-col">
       {/* Background Grid Pattern */}
       <div className="fixed inset-0 bg-grid-pattern bg-[length:40px_40px] opacity-5" />
       
@@ -78,21 +86,42 @@ function App() {
                 />
               )}
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowHelpCenter(true)}
-              className="text-muted-foreground hover:text-white hover:bg-electric-cyan/10"
-              title="Help Center"
-            >
-              <HelpCircle className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowProjectManager(true)}
+                className="text-muted-foreground hover:text-white hover:bg-electric-cyan/10"
+                title="Manage Projects"
+              >
+                <FolderOpen className="h-4 w-4 mr-2" />
+                Manage Projects
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowGlobalSettings(true)}
+                className="text-muted-foreground hover:text-white hover:bg-electric-cyan/10"
+                title="Global Settings"
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowHelpCenter(true)}
+                className="text-muted-foreground hover:text-white hover:bg-electric-cyan/10"
+                title="Help Center"
+              >
+                <HelpCircle className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10">
+      <main className="relative z-10 flex-1">
         {showLoading ? (
           <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
             <div className="text-center">
@@ -114,6 +143,9 @@ function App() {
         )}
       </main>
 
+      {/* Global Footer */}
+      <GlobalFooter />
+
       {/* Onboarding Modal */}
       <OnboardingModal 
         isOpen={showOnboarding} 
@@ -125,6 +157,37 @@ function App() {
         isOpen={showHelpCenter} 
         onClose={() => setShowHelpCenter(false)} 
       />
+
+      {/* Project Manager Modal */}
+      <Dialog open={showProjectManager} onOpenChange={setShowProjectManager}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FolderOpen className="w-5 h-5 text-electric-cyan" />
+              Project Manager
+            </DialogTitle>
+          </DialogHeader>
+          <ProjectManager 
+            onSelectProject={(projectId) => {
+              setSelectedProjectId(projectId);
+              setShowProjectManager(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Global Settings Modal */}
+      <Dialog open={showGlobalSettings} onOpenChange={setShowGlobalSettings}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5 text-electric-cyan" />
+              Global Settings
+            </DialogTitle>
+          </DialogHeader>
+          <GlobalSettings />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

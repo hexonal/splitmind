@@ -160,19 +160,103 @@ async def update_project(project_id: str, updates: dict):
 
 
 @app.delete("/api/projects/{project_id}")
-async def delete_project(project_id: str):
-    """Delete a project"""
+async def delete_project(project_id: str, cleanup_files: bool = False):
+    """Delete a project with optional complete cleanup"""
     try:
+        # Get project info before deletion
+        project = config_manager.get_project(project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        # Stop orchestrator if running for this project
+        if orchestrator.current_project_id == project_id:
+            await orchestrator.stop()
+        
+        if cleanup_files:
+            # Perform complete cleanup like reset endpoint but more thorough
+            pm = ProjectManager(project_id)
+            
+            # Kill all tmux sessions for this project
+            result = subprocess.run(["tmux", "ls"], capture_output=True, text=True)
+            if result.returncode == 0:
+                for line in result.stdout.strip().split('\n'):
+                    if project_id in line:
+                        session_name = line.split(':')[0]
+                        subprocess.run(["tmux", "kill-session", "-t", session_name])
+            
+            # Remove all worktrees
+            worktrees_dir = Path(pm.project_path) / "worktrees"
+            if worktrees_dir.exists():
+                # First, remove git worktrees properly
+                result = subprocess.run(
+                    ["git", "worktree", "list"], 
+                    cwd=pm.project_path,
+                    capture_output=True, 
+                    text=True
+                )
+                if result.returncode == 0:
+                    for line in result.stdout.strip().split('\n')[1:]:  # Skip main worktree
+                        if line:
+                            worktree_path = line.split()[0]
+                            subprocess.run(
+                                ["git", "worktree", "remove", worktree_path, "--force"],
+                                cwd=pm.project_path,
+                                capture_output=True
+                            )
+                
+                # Then remove the directory
+                import shutil
+                shutil.rmtree(worktrees_dir, ignore_errors=True)
+            
+            # Clean up git branches (except main/master)
+            subprocess.run(
+                ["git", "checkout", "main"],
+                cwd=pm.project_path,
+                capture_output=True
+            )
+            result = subprocess.run(
+                ["git", "branch"],
+                cwd=pm.project_path,
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0:
+                for line in result.stdout.strip().split('\n'):
+                    branch = line.strip().replace('* ', '')
+                    if branch not in ['main', 'master'] and not branch.startswith('('):
+                        subprocess.run(
+                            ["git", "branch", "-D", branch],
+                            cwd=pm.project_path,
+                            capture_output=True
+                        )
+            
+            # Remove .splitmind directory completely
+            splitmind_dir = Path(pm.project_path) / ".splitmind"
+            if splitmind_dir.exists():
+                import shutil
+                shutil.rmtree(splitmind_dir, ignore_errors=True)
+            
+            # Clean up status files
+            status_dir = Path("/tmp/splitmind-status")
+            if status_dir.exists():
+                for status_file in status_dir.glob(f"*{project_id}*.status"):
+                    status_file.unlink()
+        
+        # Remove project from configuration
         config_manager.delete_project(project_id)
         
         # Notify via WebSocket
         await ws_manager.broadcast(WebSocketMessage(
             type="project_deleted",
             project_id=project_id,
-            data={"project_id": project_id}
+            data={
+                "project_id": project_id,
+                "cleanup_performed": cleanup_files
+            }
         ))
         
-        return {"message": "Project deleted"}
+        cleanup_message = " with complete cleanup" if cleanup_files else ""
+        return {"message": f"Project deleted{cleanup_message}"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -1402,6 +1486,87 @@ async def install_mcp(name: str, command: Optional[str] = None):
 
 
 # ============================================================================
+# Coordination Monitoring API
+# ============================================================================
+
+@app.get("/api/projects/{project_id}/coordination/status")
+async def get_coordination_status(project_id: str):
+    """Get real-time coordination status for a project"""
+    try:
+        from .coordination_monitor import coordination_monitor
+        await coordination_monitor.initialize()
+        stats = await coordination_monitor.get_project_stats(project_id)
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/projects/{project_id}/coordination/events")
+async def get_coordination_events(project_id: str, limit: int = 50):
+    """Get recent coordination events for a project"""
+    try:
+        from .coordination_monitor import coordination_monitor
+        await coordination_monitor.initialize()
+        events = await coordination_monitor.detect_events(project_id)
+        return {"events": events[-limit:]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.websocket("/api/projects/{project_id}/coordination/live")
+async def coordination_websocket(websocket: WebSocket, project_id: str):
+    """WebSocket endpoint for live coordination updates"""
+    await websocket.accept()
+    
+    try:
+        from .coordination_monitor import coordination_monitor
+        await coordination_monitor.initialize()
+        
+        # Subscribe to coordination events
+        async def send_event(event):
+            await websocket.send_json({
+                "type": "coordination_event",
+                "data": {
+                    "event_type": event.event_type.value,
+                    "project_id": event.project_id,
+                    "agent_id": event.agent_id,
+                    "timestamp": event.timestamp,
+                    "data": event.data
+                }
+            })
+        
+        coordination_monitor.subscribe_to_events(send_event)
+        
+        # Start monitoring in background
+        monitor_task = asyncio.create_task(
+            coordination_monitor.monitor_project(project_id, interval=0.5)
+        )
+        
+        # Send initial state
+        stats = await coordination_monitor.get_project_stats(project_id)
+        await websocket.send_json({
+            "type": "coordination_state",
+            "data": stats
+        })
+        
+        # Keep connection alive and send periodic updates
+        while True:
+            # Send current state every 2 seconds
+            stats = await coordination_monitor.get_project_stats(project_id)
+            await websocket.send_json({
+                "type": "coordination_update",
+                "data": stats
+            })
+            await asyncio.sleep(2)
+            
+    except WebSocketDisconnect:
+        if 'monitor_task' in locals():
+            monitor_task.cancel()
+    except Exception as e:
+        print(f"Coordination WebSocket error: {e}")
+        if 'monitor_task' in locals():
+            monitor_task.cancel()
+
+
+# ============================================================================
 # Static Files and Frontend
 # ============================================================================
 
@@ -1411,10 +1576,14 @@ if frontend_path.exists():
     # Serve static files
     app.mount("/assets", StaticFiles(directory=frontend_path / "assets"), name="assets")
     
-    # Catch-all route for React
+    # Catch-all route for React (must be last)
     @app.get("/{full_path:path}")
     async def serve_react(full_path: str):
         """Serve React app"""
+        # Don't intercept API routes
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="API endpoint not found")
+        
         file_path = frontend_path / full_path
         if file_path.exists() and file_path.is_file():
             return FileResponse(file_path)

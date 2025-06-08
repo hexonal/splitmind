@@ -2,449 +2,560 @@
   <img src="assets/splitmind-banner.png" alt="SplitMind Logo Banner" width="100%">
 </p>
 
-<h1 align="center">SplitMind With Claude Code</h1>
-<p align="center"><i>Asynchronous AI coder orchestration using Git worktrees and tmux.</i></p>
+<h1 align="center">SplitMind v2.0</h1>
+<p align="center"><i>🧠 Enterprise-Grade Multi-Agent AI Development Platform</i></p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Version-2.0-electric--cyan?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/Platform-Web%20Dashboard-blue?style=for-the-badge" alt="Platform">
+  <img src="https://img.shields.io/badge/AI-Claude%20Powered-purple?style=for-the-badge" alt="AI">
+  <img src="https://img.shields.io/badge/Coordination-A2AMCP-green?style=for-the-badge" alt="Coordination">
+</p>
 
 ---
 
-## 🚀 Quick Start
+## 🚀 **What's New in SplitMind v2.0**
 
-### First-Time Setup
+### 🏗️ **Complete Platform Redesign**
+- **🎛️ Professional Web Dashboard** - Modern React/TypeScript interface
+- **🛡️ Enterprise Security** - Safe project management with confirmation workflows
+- **⚡ Real-time Everything** - Live WebSocket updates across all features
+- **🗂️ Project Manager** - Complete project lifecycle management
+- **⚙️ Global Settings** - Centralized configuration and API management
 
-Run the automated setup script:
+### 🤖 **Advanced Agent Coordination (A2AMCP)**
+- **🔗 Multi-Agent Protocol** - Agents coordinate through Redis backend
+- **📊 Live Coordination Dashboard** - Real-time agent monitoring with interactive graphs
+- **🔒 File Locking System** - Prevents conflicts during parallel development
+- **💬 Agent Communication** - Direct agent-to-agent messaging and interface sharing
+- **📈 Comprehensive Analytics** - Todo tracking, heartbeat monitoring, completion metrics
 
+### 🎯 **Smart Project Management**
+- **📋 Project Manager Homepage** - Default landing page for power users
+- **🗑️ Safe Deletion** - Type project name to confirm with complete cleanup options
+- **🔄 Project Reset** - Clean slate functionality for testing and iteration
+- **📊 Project Statistics** - Real-time insights and health monitoring
+- **🚀 One-Click Launch** - Simplified project creation and setup
+
+---
+
+## ⚡ **Quick Start**
+
+### 🎯 **One Command Setup**
 ```bash
+git clone https://github.com/webdevtodayjason/splitmind.git
+cd splitmind
 python setup.py
 ```
 
-This will:
-- ✅ Check prerequisites (Python, Node.js, Git, tmux)
-- ✅ Install all dependencies
-- ✅ Build the dashboard frontend
-- ✅ Create necessary directories
-- ✅ Generate example files
-
-### Launch Dashboard
-
-After setup, start the command center:
-
+### 🚀 **Launch Command Center**
 ```bash
 python launch-dashboard.py
 ```
 
-Then open http://localhost:8000 in your browser.
+**Then open:** http://localhost:8000
 
 ---
 
-## 🎯 Key Features
+## 🌟 **Core Features**
 
-### 🤖 AI Task Master (NEW!)
-- **Wave-Based Task Generation**: Automatically creates structured, parallel-executable tasks
-- **Custom AI Prompts**: Each task gets tailored instructions for optimal results
-- **Smart Dependencies**: Tasks organized by development phases (Foundation → Features → Deploy)
+### 🎛️ **Command Center Dashboard**
+- **📊 Real-time Project Overview** with live statistics
+- **🤖 Agent Status Monitoring** with start times and duration tracking  
+- **📈 Task Flow Visualization** with drag-and-drop kanban boards
+- **⚙️ Orchestrator Control** with configurable agent limits and auto-merge
+- **🔗 WebSocket Live Updates** for instant status synchronization
 
-### 📊 Enhanced Dashboard
-- **Real-Time Monitoring**: Live updates via WebSocket
-- **Task Status Workflow**: `UNCLAIMED` → `UP_NEXT` → `IN_PROGRESS` → `COMPLETED` → `MERGED`
-- **Drag & Drop Task Board**: Organize tasks visually
-- **Agent Monitoring**: See start times, running duration, and live status
+### 🧠 **AI Task Master 2.0**
+- **🌊 Wave-Based Task Generation** - Intelligent dependency management
+- **🎯 Custom AI Prompts** - Tailored instructions for each task
+- **📋 Structured Task Breakdown** - Professional development workflows
+- **🔄 Adaptive Planning** - Dynamic task adjustment based on progress
+- **📝 Plan Editing** - Manual refinement of AI-generated strategies
 
-### ⚙️ Powerful Orchestration
-- **Smart Queue Management**: Maintains optimal task queue based on max agents
-- **Manual & Auto Merge**: Choose between automatic merging or manual review
-- **Custom Prompts**: Edit AI instructions for each task individually
-- **Plan Editing**: Modify generated plans to guide development
+### 🔄 **Multi-Agent Coordination**
+- **🤝 A2AMCP Protocol** - Advanced agent-to-agent communication
+- **📡 Real-time Coordination** - Live monitoring of agent interactions
+- **🔒 Conflict Prevention** - File locking and resource management
+- **💬 Agent Messaging** - Direct communication between AI agents
+- **🧩 Interface Sharing** - Type definitions and shared components
 
----
-
-## 🖥️ Dashboard Usage & Workflow
-
-### 🚀 Getting Started
-
-#### 1. **First Launch**
-When you first open the dashboard, you'll see the welcome screen:
-- Click **"Create New Project"** or the `+` button
-- Enter project details:
-  - **Name**: Your project's display name
-  - **Path**: Select or enter the path to your Git repository
-  - **Description**: Brief project description
-  - **Max Agents**: Maximum concurrent AI agents (default: 5)
-
-⚠️ **Important**: Make sure your project path is a Git repository!
-
-#### 2. **Project Setup**
-Navigate to the Settings tab:
-
-##### Overview Tab
-1. **Project Overview**: Provide detailed context about your project
-2. **Initial Prompt**: Describe what you want to build
-3. Choose generation method:
-   - **Basic Plan Generation**: Simple plan with basic tasks
-   - **🚀 AI Task Master (Recommended)**: Comprehensive plan + structured tasks
-
-##### Plan Tab
-- View and edit the generated project plan
-- Plans created by AI Task Master include architecture decisions and tech stack
-
-### 🎯 Complete Workflow Example
-
-#### Step 1: Configure Your Project
-```
-Project Overview:
-Modern task management SaaS platform for remote teams. Built with Next.js 14, 
-TypeScript, and Supabase. Features include real-time collaboration, project 
-templates, time tracking, and team analytics. Target audience: distributed teams 
-and digital agencies. Focus on performance and intuitive UX.
-
-Initial Prompt:
-Build a collaborative task management platform with user authentication, 
-real-time updates, project workspaces, kanban boards, time tracking, 
-team member invitations, and analytics dashboard. Include Stripe integration 
-for subscriptions.
-```
-
-#### Step 2: Generate with AI Task Master
-1. Click **"🚀 AI Task Master (Plan + Tasks)"**
-2. Watch the beautiful loading animation
-3. AI creates:
-   - Comprehensive project plan
-   - Wave-based task breakdown
-   - 15-20 structured tasks with custom prompts
-
-#### Step 3: Review Generated Tasks
-Tasks are automatically organized by:
-- **Priority**: Lower numbers = higher priority
-- **Wave**: Foundation tasks before features
-- **Dependencies**: Implicit in wave structure
-
-Each task includes:
-- Clear title and description
-- Custom AI prompt
-- Git branch name
-- Priority assignment
-
-#### Step 4: Start Development
-1. Configure Orchestrator in left sidebar:
-   - Max Concurrent Agents: 3-5
-   - Auto-merge: Off (for manual review)
-   - Click "Start Orchestrator"
-2. Orchestrator automatically:
-   - Promotes tasks to UP_NEXT queue
-   - Spawns AI agents for available tasks
-   - Manages parallel execution
-   - Updates status in real-time
-
-#### Step 5: Monitor Progress
-- **Task Board**: Watch tasks flow through statuses
-- **Agent Monitor**: 
-  - See exact start times
-  - Watch live duration counters
-  - Monitor agent status (running/completed)
-- **Click on Tasks**: 
-  - View/edit task details
-  - See full AI prompt
-  - Update branch names
-  - Manual status changes
-
-#### Step 6: Review and Merge
-When tasks show "Completed":
-1. Click the task card
-2. Review the changes
-3. Click the merge button (appears for completed tasks)
-4. Or use auto-merge if enabled
-
-### 💡 Advanced Features
-
-#### Custom Task Prompts
-Click any task to:
-- View the exact prompt sent to AI agents
-- Edit prompts for specific requirements
-- Add technical specifications
-- Include context about dependencies
-
-#### Manual Plan Editing
-In Settings → Plan tab:
-- Click "Edit Plan" to modify the generated plan
-- Update architecture decisions
-- Add implementation notes
-- Guide the overall project direction
-
-#### Task Management
-- **Add Tasks**: Click "+" to create custom tasks
-- **Edit Tasks**: Click any task card to modify
-- **Branch Names**: Edit branch names (avoid `/`, `&`, `\`)
-- **Reset Tasks**: Return tasks to UNCLAIMED status
-- **Delete Tasks**: Remove unwanted tasks
-
-### 🔧 Troubleshooting Common Issues
-
-#### Tasks Stuck in UP_NEXT
-- Verify orchestrator is running (green status)
-- Check max agents setting vs running agents
-- Look for file conflicts between tasks
-- Review agent logs for errors
-
-#### "Method Not Allowed" Error
-- Clear browser cache
-- Rebuild frontend: `npm run build`
-- Check for special characters in task IDs
-
-#### WebSocket Disconnections
-- Status indicator shows connection state
-- Auto-reconnects every 5 seconds
-- Check backend is running
+### 🛡️ **Enterprise Security & Management**
+- **🔐 Safe Project Deletion** - Type confirmation with cleanup options
+- **🔄 Project Reset** - Complete environment cleanup
+- **⚙️ Global Configuration** - Centralized API key and settings management
+- **📊 Audit Trails** - Complete activity logging and monitoring
+- **🚨 Error Recovery** - Graceful handling of failures and conflicts
 
 ---
 
-## 🔄 How It Works
+## 🎯 **Complete Workflow**
 
-SplitMind enables parallel AI development through intelligent orchestration:
-
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Project   │────▶│ AI Task     │────▶│   Wave-     │
-│  Settings   │     │  Master     │     │   Based     │
-└─────────────┘     └─────────────┘     │   Tasks     │
-                                        └─────────────┘
-                           │                    │
-                           ▼                    ▼
-                    ┌─────────────┐     ┌─────────────┐
-                    │Orchestrator │────▶│ AI Agents   │
-                    │   Queue     │     │ (Parallel)  │
-                    └─────────────┘     └─────────────┘
-                           │                    │
-                           ▼                    ▼
-                    ┌─────────────┐     ┌─────────────┐
-                    │   Review    │◀────│ Completed   │
-                    │  & Merge    │     │   Work      │
-                    └─────────────┘     └─────────────┘
-```
-
-### Key Concepts
-
-1. **Wave-Based Execution**: Tasks organized by dependencies
-2. **UP_NEXT Queue**: Maintains ready tasks equal to max agents
-3. **Smart Spawning**: Agents get custom prompts and isolated worktrees
-4. **Real-Time Monitoring**: WebSocket updates for live status
-5. **Flexible Merging**: Manual review or automatic integration
-
----
-
-## 📋 Prerequisites
-
-- Python 3.8+
-- Node.js 16+
-- Git
-- tmux
-- Claude CLI (for AI agents)
-- Anthropic API key (for plan generation)
-
----
-
-## 🧱 Project Structure
-
-```
-cctg/                       # SplitMind installation directory
-├── config.json            # Global configuration
-├── projects.json          # Registered projects list
-├── dashboard/             # Web dashboard
-│   ├── backend/          # FastAPI backend
-│   │   ├── api.py       # REST endpoints
-│   │   ├── orchestrator.py # Agent orchestration
-│   │   ├── anthropic_client.py # AI integration
-│   │   └── models.py    # Data models
-│   └── frontend/         # React frontend
-│       ├── components/   # UI components
-│       └── services/     # API services
-├── scripts/              # Utility scripts
-└── launch-dashboard.py   # Dashboard launcher
-
-your_project/             # Individual project directory
-├── .splitmind/          # Project-specific data
-│   ├── tasks.md        # Task definitions
-│   └── plans/          # Generated plans
-├── worktrees/          # Git worktrees (auto-created)
-└── .git/               # Git repository
-```
-
----
-
-## 📝 Task Definition Format
-
-Tasks are stored in `.splitmind/tasks.md`:
-
-```markdown
-# tasks.md
-
-## Task: Initialize Next.js project with TypeScript
-
-- task_id: 1
-- status: unclaimed
-- branch: initialize-nextjs-project
-- session: null
-- description: Set up Next.js 14 with App Router, TypeScript, and TailwindCSS
-- prompt: null
-- dependencies: []
-- priority: 1
-
-## Task: Create authentication system
-
-- task_id: 2
-- status: unclaimed
-- branch: create-authentication-system
-- session: null
-- description: Implement JWT-based auth with login, register, and protected routes
-- prompt: null
-- dependencies: [initialize-nextjs-project]
-- priority: 2
-```
-
----
-
-## 🛠️ Configuration
-
-### Orchestrator Settings
-Configure in the dashboard's left sidebar:
-- **Max Concurrent Agents**: Number of parallel AI agents
-- **Auto-merge**: Enable/disable automatic merging
-- **Merge Strategy**: merge, squash, or fast-forward
-- **API Key**: Anthropic API key for plan generation
-
-### Project Settings
-Set in each project's Settings tab:
-- **Project Overview**: Detailed project context
-- **Initial Prompt**: What to build
-- **Max Agents**: Project-specific agent limit
-
----
-
-## 📚 API Reference
-
-### REST Endpoints
-
-#### Projects
-- `GET /api/projects` - List all projects
-- `POST /api/projects` - Create project
-- `PUT /api/projects/{id}` - Update project
-- `DELETE /api/projects/{id}` - Delete project
-
-#### Tasks
-- `GET /api/projects/{id}/tasks` - Get project tasks
-- `POST /api/projects/{id}/tasks` - Create task
-- `PUT /api/projects/{id}/tasks/{task_id}` - Update task
-- `DELETE /api/projects/{id}/tasks/{task_id}` - Delete task
-- `POST /api/projects/{id}/tasks/{task_id}/merge` - Merge task
-
-#### Plan Generation
-- `POST /api/projects/{id}/generate-plan` - Basic plan generation
-- `POST /api/projects/{id}/generate-task-breakdown` - AI Task Master
-
-#### Orchestrator
-- `POST /api/orchestrator/start` - Start orchestrator
-- `POST /api/orchestrator/stop` - Stop orchestrator
-- `GET /api/orchestrator/status` - Get status
-
-### WebSocket Events
-
-Connect to `ws://localhost:8000/ws` for real-time updates:
-
-- `task_created` - New task added
-- `task_updated` - Task modified
-- `task_status_changed` - Status update
-- `agent_spawned` - New agent started
-- `agent_status_update` - Agent progress
-- `orchestrator_started/stopped` - Orchestrator state
-
----
-
-## 🚨 Troubleshooting
-
-### Common Issues
-
-#### 1. **Task Update Fails - "Method Not Allowed"**
-- **Cause**: Special characters in task IDs
-- **Fix**: Run `python fix-task-ids.py <project-id>`
-
-#### 2. **Tasks Not Being Claimed**
-- Check orchestrator is running
-- Verify Claude CLI is configured
-- Check agent limit settings
-- Review task dependencies
-
-#### 3. **Plan Generation Timeout**
-- Use simpler project descriptions
-- Try claude-3-5-haiku model (faster)
-- Check API key is valid
-
-#### 4. **Frontend Build Errors**
+### 1️⃣ **First Time Setup**
 ```bash
-cd dashboard/frontend
-rm -rf node_modules
-npm install
-npm run build
+# Quick installation
+python setup.py
+
+# Launch dashboard  
+python launch-dashboard.py
 ```
 
-#### 5. **WebSocket Disconnections**
-- Check backend is running
-- Clear browser cache
-- Try different browser
+### 2️⃣ **Configure Global Settings**
+1. Click **⚙️ Settings** in top navigation
+2. Add your **Anthropic API Key**
+3. Configure **Orchestrator Settings**:
+   - Max concurrent agents (1-20)
+   - Auto-merge preferences
+   - Spawn intervals
 
-### Debug Mode
+### 3️⃣ **Create Your First Project**
+1. **Project Manager** opens as homepage for returning users
+2. Click **"+ Create Project"** or use **"Manage Projects"** button
+3. Configure project details:
+   - **Name & Description**
+   - **Git Repository Path**
+   - **Agent Limits**
 
-Run with verbose logging:
-```bash
-python launch-dashboard.py --dev
+### 4️⃣ **Generate AI-Powered Development Plan**
+1. Navigate to project **Settings Tab**
+2. Add **Project Overview** and **Initial Prompt**
+3. Click **"🚀 AI Task Master"** for comprehensive planning
+4. Review generated **wave-based task breakdown**
+
+### 5️⃣ **Launch Multi-Agent Development**
+1. **Start Orchestrator** in project sidebar
+2. Watch **real-time task progression**:
+   - `UNCLAIMED` → `UP_NEXT` → `IN_PROGRESS` → `COMPLETED` → `MERGED`
+3. Monitor agents in **Coordination Dashboard**:
+   - Live agent visualization
+   - File lock monitoring  
+   - Communication tracking
+
+### 6️⃣ **Monitor & Coordinate**
+- **📊 Task Board**: Drag-and-drop task management
+- **🤖 Agent Monitor**: Live status and performance metrics
+- **🔗 Coordination Tab**: Real-time multi-agent coordination
+- **📡 Event Stream**: Live coordination events and communications
+
+---
+
+## 🏗️ **Architecture Overview**
+
+### 🎛️ **Dashboard Architecture**
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   React/TS      │    │   FastAPI       │    │     Redis       │
+│   Frontend      │◄──►│   Backend       │◄──►│   Coordination  │
+│                 │    │                 │    │     Store       │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         │              ┌─────────────────┐              │
+         │              │   WebSocket     │              │
+         └──────────────┤   Real-time     ├──────────────┘
+                        │   Updates       │
+                        └─────────────────┘
 ```
 
-### Clean Reset
+### 🤖 **Agent Coordination (A2AMCP)**
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Agent 1       │    │   Coordination  │    │   Agent 2       │
+│   (Claude CLI)  │◄──►│   Monitor       │◄──►│   (Claude CLI)  │
+│                 │    │   (Redis)       │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         │              ┌─────────────────┐              │
+         │              │   File Locks    │              │
+         └──────────────┤   & Messages    ├──────────────┘
+                        │   & Interfaces  │
+                        └─────────────────┘
+```
 
-Complete reset:
+### 🔄 **Development Flow**
+```
+Project Creation → AI Planning → Task Generation → Agent Spawning
+       │                │            │                  │
+       ▼                ▼            ▼                  ▼
+┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
+│   Settings  │ │   AI Task   │ │   Wave      │ │  Parallel   │
+│ & Overview  │ │   Master    │ │   Based     │ │  Execution  │
+└─────────────┘ └─────────────┘ │   Tasks     │ └─────────────┘
+                                └─────────────┘        │
+                                       │               ▼
+                                       ▼        ┌─────────────┐
+                                ┌─────────────┐ │  Real-time  │
+                                │Coordination │ │ Monitoring  │
+                                │   & Merge   │ │ & Control   │
+                                └─────────────┘ └─────────────┘
+```
+
+---
+
+## 🛠️ **Configuration**
+
+### ⚙️ **Global Settings**
+Access via **Settings icon** in top navigation:
+
+#### 🧠 **Anthropic API**
+- **API Key**: Secure storage with validation
+- **Model Selection**: Claude 3 Opus, Sonnet, Haiku, 3.5 Sonnet
+- **Direct link** to Anthropic Console
+
+#### 👥 **Orchestrator Control**
+- **Enable/Disable**: Master orchestrator switch
+- **Max Agents**: 1-20 concurrent agents
+- **Auto-merge**: Automatic vs manual review
+- **Spawn Interval**: 10-600 second intervals
+- **Merge Strategy**: merge, rebase, squash
+
+### 📊 **Project Settings**
+Individual project configuration:
+- **Project Overview**: Detailed context for AI agents
+- **Initial Prompt**: Development objectives
+- **Max Agents**: Project-specific limits
+- **Git Integration**: Branch management and worktree handling
+
+---
+
+## 📊 **Real-time Monitoring**
+
+### 🎛️ **Coordination Command Center**
+**Location**: Project → Coordination Tab
+
+#### 🕸️ **Live Agent Graph**
+- **Pulsing nodes** represent active agents
+- **Color coding**: 🟢 Active, 🟡 Working, 🔴 Offline
+- **Progress bars** show todo completion
+- **File lock indicators** prevent conflicts
+- **Communication lines** show agent interactions
+
+#### 📡 **Event Stream**
+Real-time feed of:
+- Agent registrations and heartbeats
+- Todo creation and completion
+- File locking and unlocking
+- Inter-agent communications
+- Task completion notifications
+
+#### 📊 **Live Statistics**
+- **Active vs Total Agents**
+- **Todo Completion Rates**
+- **File Lock Counts**
+- **Communication Graph Analysis**
+
+### 🤖 **Agent Status Monitoring**
+**Location**: Project → Agents Tab
+
+- **Individual agent cards** with health status
+- **Start times** and **duration tracking**
+- **Live session monitoring**
+- **iTerm integration** for direct agent access
+- **Session management** and cleanup tools
+
+---
+
+## 🗂️ **Project Management**
+
+### 🏠 **Project Manager Homepage**
+**Default page for returning users** - accessible via **"Manage Projects"**
+
+#### 📋 **Project Grid View**
+- **Visual project cards** with status indicators
+- **Creation dates** and **Git repository status**
+- **Quick access buttons**: Edit, Reset, Delete
+- **Project statistics** and health monitoring
+
+#### ✏️ **Project Operations**
+- **✏️ Edit**: Update name, description, settings
+- **🔄 Reset**: Clean tasks, sessions, branches
+- **🗑️ Delete**: Safe deletion with confirmation
+
+### 🛡️ **Enhanced Delete Safety**
+**Enterprise-grade protection**:
+
+1. **⚠️ Hazardous confirmation dialog**
+2. **Type project name** to enable deletion
+3. **Complete cleanup toggle**:
+   - **Safe**: Remove from SplitMind only
+   - **Complete**: Remove tasks, worktrees, branches, sessions, .splitmind directory
+4. **Real-time validation** with visual feedback
+5. **Disabled delete button** until confirmed
+
+---
+
+## 🧱 **Technical Architecture**
+
+### 📁 **Project Structure**
+```
+splitmind/                     # Main installation
+├── 📄 README.md              # This documentation
+├── 🚀 launch-dashboard.py    # One-click launcher
+├── ⚙️ setup.py               # Installation script
+├── 📊 dashboard/             # Web interface
+│   ├── 🔧 backend/          # FastAPI server
+│   │   ├── api.py          # REST endpoints
+│   │   ├── orchestrator.py # Agent management
+│   │   ├── coordination_monitor.py # A2AMCP monitoring
+│   │   ├── models.py       # Data structures
+│   │   └── websocket_manager.py # Real-time updates
+│   └── 🎨 frontend/         # React dashboard
+│       ├── components/     # UI components
+│       ├── services/       # API clients
+│       └── hooks/          # Custom React hooks
+├── 🤖 A2AMCP/              # Agent coordination
+│   ├── mcp-server-redis.py # Coordination server
+│   └── sdk/                # Python SDK
+└── 📊 projects/            # User projects
+    └── your-project/       # Individual project
+        ├── .splitmind/     # Project metadata
+        ├── worktrees/      # Git worktrees
+        └── .git/           # Git repository
+```
+
+### 🔌 **API Architecture**
+
+#### 📡 **REST Endpoints**
+```
+🗂️ Projects:     /api/projects/*
+📋 Tasks:        /api/projects/{id}/tasks/*
+🤖 Agents:       /api/projects/{id}/agents/*
+⚙️ Orchestrator: /api/orchestrator/*
+🧠 Plan Gen:     /api/projects/{id}/generate-*
+🔗 Coordination: /api/projects/{id}/coordination/*
+```
+
+#### 🔄 **WebSocket Events**
+```
+📊 Real-time Updates:     /ws/updates
+🔗 Coordination Stream:   /api/projects/{id}/coordination/live
+```
+
+#### 🤝 **A2AMCP Protocol**
+```
+Redis Store:
+├── 🤖 splitmind:{project}:agents      # Agent registry
+├── 💓 splitmind:{project}:heartbeat   # Agent health
+├── 📝 splitmind:{project}:todos       # Task tracking
+├── 🔒 splitmind:{project}:file_locks  # Resource locks
+├── 🧩 splitmind:{project}:interfaces  # Shared types
+└── 💬 splitmind:{project}:messages    # Communications
+```
+
+---
+
+## 🚨 **Troubleshooting**
+
+### 🔧 **Common Issues**
+
+#### 🚫 **Can't Delete Projects**
+**Symptom**: Delete button stays disabled
+**Solution**: Type the exact project name in confirmation field
+
+#### 🔄 **Tasks Stuck in UP_NEXT**
+**Symptoms**: Tasks not being picked up by agents
+**Solutions**:
+1. Check **Orchestrator Status** (should be green/running)
+2. Verify **Agent Limits** vs currently running agents
+3. Review **File Conflicts** in coordination tab
+4. Check **Claude CLI** configuration
+
+#### 🌐 **WebSocket Disconnections**
+**Symptoms**: No real-time updates, status indicators red
+**Solutions**:
+1. **Refresh browser** - auto-reconnects every 3 seconds
+2. **Clear browser cache** and reload
+3. **Check backend** is running on port 8000
+4. **Restart dashboard**: `python launch-dashboard.py`
+
+#### 🔄 **Agent Coordination Issues**
+**Symptoms**: Agents not appearing in coordination tab
+**Solutions**:
+1. **Verify Redis** connection (Docker container running)
+2. **Check MCP server** on port 5050
+3. **Restart A2AMCP**: `cd A2AMCP && docker-compose restart`
+4. **Check agent logs** for MCP registration errors
+
+### 🧹 **Clean Reset**
+**Complete system reset**:
 ```bash
-# Stop everything
+# 1. Stop all processes
 tmux kill-server
+docker-compose -f A2AMCP/docker-compose.yml down
 
-# Reset config
-rm -rf config.json projects.json
+# 2. Clear configuration
+rm -f config.json projects.json
 
-# Rebuild frontend
+# 3. Reset Redis data
+docker-compose -f A2AMCP/docker-compose.yml down -v
+
+# 4. Rebuild frontend
 cd dashboard/frontend
 rm -rf node_modules dist
 npm install
 npm run build
 cd ../..
 
-# Restart
+# 5. Restart everything
+docker-compose -f A2AMCP/docker-compose.yml up -d
 python launch-dashboard.py
+```
+
+### 🔍 **Debug Mode**
+**Verbose logging**:
+```bash
+python launch-dashboard.py --dev
 ```
 
 ---
 
-## 🤝 Contributing
+## 🎯 **Advanced Usage**
 
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open Pull Request
+### 🔧 **Custom Task Prompts**
+**Enhanced AI Instructions**:
+1. Click any task card to open details
+2. Edit the **AI Prompt** field with specific requirements
+3. Add **technical specifications** and **context**
+4. Include **dependency information** and **constraints**
+
+### 📊 **Coordination Monitoring**
+**Real-time Agent Analysis**:
+1. Navigate to **Coordination Tab** in any project
+2. **🕸️ Live Graph**: Interactive agent visualization
+3. **📡 Event Stream**: Real-time coordination events
+4. **🔒 File Locks**: Active resource conflicts
+5. **📈 Statistics**: Performance metrics and health
+
+### 🏗️ **Multi-Project Workflows**
+**Enterprise Project Management**:
+1. **Project Manager Homepage**: Overview of all projects
+2. **Quick switching**: Select projects from top navigation
+3. **Bulk operations**: Reset or delete multiple projects
+4. **Resource monitoring**: Cross-project agent usage
+
+### ⚙️ **Orchestrator Optimization**
+**Performance Tuning**:
+- **Agent Limits**: Balance speed vs system resources
+- **Spawn Intervals**: Adjust based on task complexity
+- **Auto-merge Settings**: Enable for faster iteration
+- **File Lock Monitoring**: Prevent coordination conflicts
 
 ---
 
-## 📄 License
+## 🔮 **Roadmap**
 
-This project is licensed under the MIT License - see LICENSE file for details.
+### 🚀 **Version 2.1 (Coming Soon)**
+- **🔗 GitHub Integration**: Direct PR management
+- **📊 Analytics Dashboard**: Performance insights and metrics
+- **🤖 Agent Templates**: Pre-configured agent behaviors
+- **🔄 Workflow Automation**: Custom development pipelines
+
+### 🌟 **Version 2.2 (Future)**
+- **☁️ Cloud Deployment**: One-click cloud hosting
+- **👥 Team Collaboration**: Multi-user project management
+- **🔌 Plugin System**: Custom integrations and extensions
+- **📱 Mobile Interface**: Project monitoring on mobile
+
+### 🎯 **Version 3.0 (Vision)**
+- **🧠 Multi-LLM Support**: OpenAI, Gemini, local models
+- **🔄 Advanced Coordination**: Complex multi-agent workflows  
+- **📊 Enterprise Features**: SSO, audit logs, compliance
+- **🌐 Distributed Agents**: Cross-platform and remote execution
 
 ---
 
-## 🙏 Acknowledgments
+## 🤝 **Contributing**
 
-- Built for use with [Claude](https://claude.ai)
-- Inspired by the need for parallel AI development
-- Thanks to all contributors and early adopters
+### 🛠️ **Development Setup**
+```bash
+# 1. Fork and clone
+git clone https://github.com/yourusername/splitmind.git
+cd splitmind
+
+# 2. Install dependencies
+python setup.py
+
+# 3. Start development server
+python launch-dashboard.py --dev
+
+# 4. Frontend development
+cd dashboard/frontend
+npm run dev  # Hot reload development
+```
+
+### 📋 **Contribution Guidelines**
+1. **🔍 Check Issues**: Look for existing bugs or feature requests
+2. **🌿 Create Branch**: `git checkout -b feature/amazing-feature`
+3. **✅ Follow Standards**: Use existing code style and patterns
+4. **🧪 Test Changes**: Verify all functionality works
+5. **📝 Update Docs**: Add documentation for new features
+6. **🔄 Submit PR**: Detailed description of changes
+
+### 🏗️ **Architecture Contributions**
+- **🎨 Frontend**: React/TypeScript components in `/dashboard/frontend`
+- **🔧 Backend**: FastAPI endpoints in `/dashboard/backend`
+- **🤖 Coordination**: A2AMCP protocol in `/A2AMCP`
+- **📊 Monitoring**: Real-time features and WebSocket handling
 
 ---
 
-## 📞 Support
+## 📄 **License**
 
-- 📧 Email: support@splitmind.ai
-- 💬 Discord: [Join our community](https://discord.gg/splitmind)
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/splitmind/issues)
+**MIT License** - see LICENSE file for details.
+
+SplitMind is open source software built for the developer community.
+
+---
+
+## 🙏 **Acknowledgments**
+
+### 🤖 **AI Partners**
+- **Anthropic Claude** - Powering intelligent agent coordination
+- **Claude Code** - Development acceleration platform
+
+### 🛠️ **Technology Stack**
+- **React + TypeScript** - Modern frontend development
+- **FastAPI + Python** - High-performance backend
+- **Redis** - Real-time coordination store
+- **WebSockets** - Live dashboard updates
+- **Docker** - Containerized coordination services
+
+### 🌟 **Community**
+- **Early Adopters** - Feedback and testing
+- **Contributors** - Code, documentation, and ideas
+- **Developer Community** - Inspiration and innovation
+
+---
+
+## 📞 **Support & Community**
+
+### 🆘 **Get Help**
+- **📧 Email**: jason@webdevtoday.com
+- **🐛 Issues**: [GitHub Issues](https://github.com/webdevtodayjason/splitmind/issues)
+- **📖 Documentation**: [Full Docs](https://github.com/webdevtodayjason/splitmind/docs)
+
+### 🌐 **Connect**
+- **🐙 GitHub**: [@webdevtodayjason](https://github.com/webdevtodayjason)
+- **🐦 Twitter**: [@webdevtodayjason](https://twitter.com/webdevtodayjason)
+- **💼 LinkedIn**: [Jason Brashear](https://linkedin.com/in/jasonbrashear)
+- **🌐 Website**: [WebDevToday.com](https://webdevtoday.com)
+
+### 🚀 **Enterprise**
+For enterprise licensing, custom integrations, or professional support:
+- **📧 Enterprise**: enterprise@webdevtoday.com
+- **📞 Consulting**: Available for custom implementations
+
+---
+
+<p align="center">
+  <img src="assets/splitmind-logo-200x190.png" alt="SplitMind Logo" width="100">
+</p>
+
+<p align="center">
+  <strong>🧠 SplitMind v2.0 - Where AI Agents Collaborate</strong><br>
+  <em>Built with ❤️ by Jason Brashear</em>
+</p>
+
+---
+
+## 🏷️ **Tags**
+`ai-development` `multi-agent` `claude-ai` `task-orchestration` `real-time-coordination` `web-dashboard` `enterprise-tools` `parallel-development` `agent-coordination` `a2amcp` `redis` `websockets` `react` `typescript` `fastapi` `python`

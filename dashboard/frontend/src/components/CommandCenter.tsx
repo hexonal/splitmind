@@ -7,8 +7,9 @@ import { AgentMonitor } from '@/components/AgentMonitor';
 import { ProjectStats } from '@/components/ProjectStats';
 import { ProjectSettings } from '@/components/ProjectSettings';
 import { AgentCoordination } from '@/components/AgentCoordination';
+import AgentCoordinationCenter from '@/components/AgentCoordinationCenter';
 import { motion } from 'framer-motion';
-import { LayoutGrid, Cpu, BarChart3, Settings } from 'lucide-react';
+import { LayoutGrid, Cpu, BarChart3, Settings, Network } from 'lucide-react';
 
 interface CommandCenterProps {
   project: Project;
@@ -56,6 +57,10 @@ export function CommandCenter({ project }: CommandCenterProps) {
                 <Cpu className="w-4 h-4 mr-2" />
                 Agents
               </TabsTrigger>
+              <TabsTrigger value="coordination" className="data-[state=active]:bg-electric-cyan/20">
+                <Network className="w-4 h-4 mr-2" />
+                Coordination
+              </TabsTrigger>
               <TabsTrigger value="stats" className="data-[state=active]:bg-electric-cyan/20">
                 <BarChart3 className="w-4 h-4 mr-2" />
                 Statistics
@@ -72,6 +77,10 @@ export function CommandCenter({ project }: CommandCenterProps) {
 
             <TabsContent value="agents" className="space-y-6">
               <AgentMonitor projectId={project.id} />
+            </TabsContent>
+
+            <TabsContent value="coordination" className="space-y-6">
+              <AgentCoordinationCenter projectId={project.id} />
             </TabsContent>
 
             <TabsContent value="stats" className="space-y-6">

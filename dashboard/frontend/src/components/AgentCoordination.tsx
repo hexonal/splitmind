@@ -14,7 +14,6 @@ import {
   Info,
   Network
 } from 'lucide-react';
-import { api } from '@/services/api';
 
 interface CoordinationStats {
   enabled: boolean;
@@ -35,7 +34,7 @@ interface AgentCoordinationProps {
 }
 
 export function AgentCoordination({ projectId }: AgentCoordinationProps) {
-  const { data: stats, isLoading, error, refetch } = useQuery<CoordinationStats>({
+  const { data: stats, isLoading, error } = useQuery<CoordinationStats>({
     queryKey: ['coordination-stats', projectId],
     queryFn: async () => {
       const response = await fetch(`/api/projects/${projectId}/coordination-stats`);
