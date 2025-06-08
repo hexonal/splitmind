@@ -291,11 +291,13 @@ async def get_tasks(project_id: str):
 
 
 @app.post("/api/projects/{project_id}/tasks", response_model=Task)
-async def create_task(project_id: str, title: str, description: Optional[str] = None):
+async def create_task(project_id: str, title: str, description: Optional[str] = None, 
+                     prompt: Optional[str] = None, priority: int = 0,
+                     dependencies: Optional[List[str]] = None):
     """Create a new task"""
     try:
         pm = ProjectManager(project_id)
-        task = pm.add_task(title, description)
+        task = pm.add_task(title, description, dependencies, priority, prompt)
         
         # Notify via WebSocket
         await ws_manager.broadcast(WebSocketMessage(

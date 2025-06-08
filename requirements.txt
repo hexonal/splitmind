@@ -21,6 +21,9 @@ anthropic>=0.39.0
 # Agent coordination
 a2amcp-sdk>=0.1.0
 
+# Redis for coordination
+redis==5.0.1
+
 # Optional: For development
 pytest==8.4.0
 pytest-asyncio==1.0.0

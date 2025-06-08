@@ -11,6 +11,8 @@ import tempfile
 from typing import Optional, List
 from pathlib import Path
 from datetime import datetime
+import redis
+import json
 
 from .models import Task, TaskStatus, OrchestratorConfig, WebSocketMessage
 from .config import config_manager
@@ -444,8 +446,15 @@ class OrchestratorManager:
             # Get the PTY runner path
             pty_runner_path = Path(__file__).parent / "claude_pty_runner.py"
             
+            # Prepare template variables
+            project_id = pm.project.id
+            task_id = str(task.task_id)
+            branch = task.branch
+            task_title = task.title
+            actual_prompt = prompt
+            
             # Create a wrapper script that runs in the foreground
-            wrapper_script = f'''#!/bin/bash
+            wrapper_script = '''#!/bin/bash
 cd {worktree_path}
 
 echo "🚀 Starting AI agent for task: {task.title}"
@@ -475,15 +484,44 @@ echo ""
 echo "Launching Claude Code..."
 echo "----------------------------------------"
 
-# Save the prompt to pass to Claude
-PROMPT=$(cat << 'EOF'
-{prompt}
-EOF
-)
+# Set environment variables for agent coordination
+export SPLITMIND_PROJECT_ID="{project_id}"
+export SPLITMIND_SESSION_NAME="{session_name}"
+export SPLITMIND_TASK_ID="{task_id}"
+export SPLITMIND_BRANCH="{branch}"
+export SPLITMIND_TASK_TITLE="{task_title}"
 
-# Run Claude with the prompt
-# Note: This flag must be accepted interactively at least once before using
-echo "$PROMPT" | claude --dangerously-skip-permissions
+echo "📊 Agent Configuration:"
+echo "   Project: $SPLITMIND_PROJECT_ID"
+echo "   Session: $SPLITMIND_SESSION_NAME"
+echo "   Task ID: $SPLITMIND_TASK_ID"
+echo "   Branch: $SPLITMIND_BRANCH"
+echo ""
+
+# Create MCP config for A2AMCP
+MCP_CONFIG='{
+  "mcpServers": {
+    "splitmind-coordination": {
+      "command": "/Users/jasonbrashear/code/cctg/mcp-wrapper.sh",
+      "args": [],
+      "env": {}
+    }
+  }
+}'
+
+# Add coordination setup to prompt
+COORDINATION_PROMPT="IMPORTANT: Read CLAUDE.md for coordination instructions. You MUST register with the coordination system before starting work. Use: register_agent('$SPLITMIND_PROJECT_ID', '$SPLITMIND_SESSION_NAME', '$SPLITMIND_TASK_ID', '$SPLITMIND_BRANCH', '$SPLITMIND_TASK_TITLE')
+
+When you complete your task, use: mark_task_completed('$SPLITMIND_PROJECT_ID', '$SPLITMIND_SESSION_NAME', '$SPLITMIND_TASK_ID')"
+
+# Create combined prompt with proper escaping
+FULL_PROMPT="$COORDINATION_PROMPT
+
+{actual_prompt}"
+
+# Run Claude with the prompt as an argument and MCP config
+# Use --print for non-interactive mode to avoid Ink raw mode error
+claude --dangerously-skip-permissions --print --mcp-config "$MCP_CONFIG" "$FULL_PROMPT"
 
 # Check if Claude exited successfully
 if [ $? -eq 0 ]; then
@@ -497,6 +535,18 @@ fi
 # This line will only run if Claude exits with an error
 echo "Claude exited unexpectedly"
 '''
+            
+            # Replace template variables
+            wrapper_script = wrapper_script.replace('{worktree_path}', str(worktree_path))
+            wrapper_script = wrapper_script.replace('{task.title}', task.title)
+            wrapper_script = wrapper_script.replace('{task.description}', task.description or '')
+            wrapper_script = wrapper_script.replace('{project_id}', project_id)
+            wrapper_script = wrapper_script.replace('{session_name}', session_name)
+            wrapper_script = wrapper_script.replace('{task_id}', task_id)
+            wrapper_script = wrapper_script.replace('{branch}', branch)
+            wrapper_script = wrapper_script.replace('{task_title}', task_title)
+            wrapper_script = wrapper_script.replace('{actual_prompt}', actual_prompt)
+            wrapper_script = wrapper_script.replace('{status_file}', str(status_file))
             
             # Write the wrapper script
             wrapper_file = f"/tmp/claude_wrapper_{session_name}.sh"
@@ -626,6 +676,63 @@ echo "Claude exited unexpectedly"
             pm = ProjectManager(self.current_project_id)
             tasks = pm.get_tasks()
             
+            # Check Redis for completed tasks
+            try:
+                # Connect to Redis through Docker container's exposed port
+                # The container maps internal port 6379 to external port 6379
+                r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+                completion_key = f"splitmind:{self.current_project_id}:completed_tasks"
+                completed_tasks = r.hgetall(completion_key)
+                
+                # Process completed tasks from Redis
+                for task_id, completion_data in completed_tasks.items():
+                    completion_info = json.loads(completion_data)
+                    session_name = completion_info.get('session_name')
+                    
+                    # Find the corresponding task
+                    for task in tasks:
+                        if str(task.task_id) == task_id and task.session == session_name:
+                            print(f"🎯 Redis: Task {task_id} marked as completed by agent {session_name}")
+                            
+                            # Kill the tmux session
+                            subprocess.run(["tmux", "kill-session", "-t", session_name])
+                            print(f"✅ Killed session {session_name}")
+                            
+                            # Clean up status file
+                            status_file = self.status_dir / f"{session_name}.status"
+                            if status_file.exists():
+                                status_file.unlink()
+                            
+                            # Remove from Redis completed tasks
+                            r.hdel(completion_key, task_id)
+                            
+                            # Mark task as completed
+                            pm.update_task(task.id, {
+                                "status": TaskStatus.COMPLETED,
+                                "completed_at": datetime.now()
+                            })
+                            
+                            await self.ws_manager.broadcast(WebSocketMessage(
+                                type="task_completed",
+                                project_id=self.current_project_id,
+                                data={
+                                    "task_id": task.id,
+                                    "branch": task.branch
+                                }
+                            ))
+                            
+                            print(f"✅ Task {task.title} marked as completed")
+                            
+                            # Add to merge queue if auto-merge is enabled
+                            if self.config.auto_merge and self.merge_queue:
+                                all_tasks = pm.get_tasks()
+                                await self.merge_queue.add_to_queue(task, all_tasks)
+                            
+                            break
+                
+            except Exception as e:
+                print(f"Redis check error: {e}")
+            
             # Check each in-progress or up_next task
             for task in tasks:
                 if task.status in [TaskStatus.UP_NEXT, TaskStatus.IN_PROGRESS] and task.session:
@@ -640,10 +747,37 @@ echo "Claude exited unexpectedly"
                     if status_file.exists():
                         status = status_file.read_text().strip()
                         if status == "COMPLETED":
-                            # Agent signaled completion, kill the session
+                            # Agent signaled completion
+                            print(f"✅ Agent {task.session} signaled COMPLETED via status file")
+                            
+                            # Kill the session
                             subprocess.run(["tmux", "kill-session", "-t", task.session])
                             status_file.unlink()  # Clean up status file
-                            result.returncode = 1  # Treat as session doesn't exist
+                            
+                            # Update task status immediately
+                            pm.update_task(task.id, {
+                                "status": TaskStatus.COMPLETED,
+                                "completed_at": datetime.now()
+                            })
+                            
+                            await self.ws_manager.broadcast(WebSocketMessage(
+                                type="task_completed",
+                                project_id=self.current_project_id,
+                                data={
+                                    "task_id": task.id,
+                                    "branch": task.branch
+                                }
+                            ))
+                            
+                            print(f"✅ Task {task.title} marked as completed")
+                            
+                            # Add to merge queue if auto-merge is enabled
+                            if self.config.auto_merge and self.merge_queue:
+                                all_tasks = pm.get_tasks()
+                                await self.merge_queue.add_to_queue(task, all_tasks)
+                            
+                            # Skip further processing for this task
+                            continue
                     
                     elif result.returncode == 0:
                         # Session exists but no status file, check if agent is done by looking at output
@@ -654,7 +788,7 @@ echo "Claude exited unexpectedly"
                         )
                         
                         output = capture_result.stdout
-                        if "✅ Task completed" in output or "All changes have been committed" in output:
+                        if "✅ Task completed" in output or "Task completed!" in output or "All changes have been committed" in output:
                             # Agent finished, kill the session
                             subprocess.run(["tmux", "kill-session", "-t", task.session])
                             result.returncode = 1  # Pretend session doesn't exist
@@ -693,12 +827,23 @@ echo "Claude exited unexpectedly"
                                 all_tasks = pm.get_tasks()
                                 await self.merge_queue.add_to_queue(task, all_tasks)
                         else:
-                            # No commits yet, but don't reset immediately
-                            # Only reset if the session has been gone for a while
-                            print(f"⚠️ Agent for task {task.title} stopped without commits")
+                            # No commits yet, reset task status so it can be retried
+                            print(f"⚠️ Agent for task {task.title} stopped without commits - resetting to UP_NEXT")
                             
-                            # TODO: Add logic to only reset after a delay or multiple failed checks
-                            # For now, don't reset immediately to give agents time to work
+                            # Reset task status to UP_NEXT so it can be picked up again
+                            pm.update_task(task.id, {
+                                "status": TaskStatus.UP_NEXT,
+                                "session": None
+                            })
+                            
+                            await self.ws_manager.broadcast(WebSocketMessage(
+                                type="task_status_changed",
+                                project_id=self.current_project_id,
+                                data={
+                                    "task_id": task.id,
+                                    "status": TaskStatus.UP_NEXT
+                                }
+                            ))
         
         except Exception as e:
             print(f"Error checking agent status: {e}")

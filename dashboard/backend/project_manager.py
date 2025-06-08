@@ -216,17 +216,15 @@ class ProjectManager:
             if t.task_id:
                 max_task_id = max(max_task_id, t.task_id)
         
-        # Generate branch name (sanitize to avoid URL issues)
-        branch = title.lower()
-        branch = self._sanitize_task_id(branch)
-        branch = ''.join(c if c.isalnum() or c in '-_ ' else '' for c in branch)
-        branch = branch.replace(' ', '-')
-        branch = '-'.join(filter(None, branch.split('-')))
-        
         # Create task with auto-incremented task_id
         new_task_id = max_task_id + 1
+        
+        # Generate simple branch name: task-{number}
+        branch = f"task-{new_task_id}"
+        # Use simple ID format: task_number-project_id
+        simple_id = f"{new_task_id}-{self.project.id}"
         task = Task(
-            id=f"{branch}-{len(tasks)}",
+            id=simple_id,
             task_id=new_task_id,
             title=title,
             description=description,
