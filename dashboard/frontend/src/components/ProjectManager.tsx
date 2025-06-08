@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CreateProjectDialog } from '@/components/CreateProjectDialog';
 import { 
   FolderOpen, 
   Trash2, 
@@ -21,7 +22,8 @@ import {
   GitBranch,
   Users,
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  Plus
 } from 'lucide-react';
 
 interface ProjectManagerProps {
@@ -32,6 +34,7 @@ export function ProjectManager({ onSelectProject }: ProjectManagerProps) {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deletingProject, setDeletingProject] = useState<Project | null>(null);
   const [resetingProject, setResetingProject] = useState<Project | null>(null);
+  const [showCreateProject, setShowCreateProject] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', description: '' });
   const [deleteWithCleanup, setDeleteWithCleanup] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
@@ -135,6 +138,7 @@ export function ProjectManager({ onSelectProject }: ProjectManagerProps) {
     resetMutation.mutate(resetingProject.id);
   };
 
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -166,6 +170,13 @@ export function ProjectManager({ onSelectProject }: ProjectManagerProps) {
         </div>
         <div className="flex items-center space-x-2">
           <Button
+            onClick={() => setShowCreateProject(true)}
+            className="bg-electric-cyan hover:bg-electric-cyan/90 text-dark-bg font-medium"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create New Project
+          </Button>
+          <Button
             variant="outline"
             size="sm"
             onClick={() => refetch()}
@@ -183,9 +194,16 @@ export function ProjectManager({ onSelectProject }: ProjectManagerProps) {
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FolderOpen className="w-12 h-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Projects Yet</h3>
-            <p className="text-muted-foreground text-center">
-              Create your first project to get started with SplitMind
+            <p className="text-muted-foreground text-center mb-6">
+              Create your first project to get started with SplitMind's AI-powered development workflow
             </p>
+            <Button
+              onClick={() => setShowCreateProject(true)}
+              className="bg-electric-cyan hover:bg-electric-cyan/90 text-dark-bg font-medium"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Your First Project
+            </Button>
           </CardContent>
         </Card>
       ) : (
@@ -469,6 +487,12 @@ export function ProjectManager({ onSelectProject }: ProjectManagerProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Project Dialog */}
+      <CreateProjectDialog
+        open={showCreateProject}
+        onOpenChange={setShowCreateProject}
+      />
     </div>
   );
 }
