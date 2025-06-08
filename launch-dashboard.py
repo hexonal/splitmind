@@ -11,6 +11,7 @@ import sys
 import time
 import subprocess
 import signal
+import psutil
 from pathlib import Path
 
 def check_dependencies():
@@ -19,7 +20,8 @@ def check_dependencies():
         'fastapi': 'fastapi',
         'uvicorn': 'uvicorn[standard]',
         'websockets': 'websockets',
-        'aiofiles': 'aiofiles'
+        'aiofiles': 'aiofiles',
+        'psutil': 'psutil'
     }
     missing = []
     
@@ -38,6 +40,107 @@ def check_dependencies():
             print("✅ Dependencies installed!")
         else:
             sys.exit(1)
+
+def check_running_servers(port=8000):
+    """Check for running dashboard processes and optionally shut them down"""
+    running_processes = []
+    
+    # Check for processes using the port (with error handling)
+    try:
+        for conn in psutil.net_connections():
+            try:
+                if hasattr(conn, 'laddr') and conn.laddr and conn.laddr.port == port and conn.status == psutil.CONN_LISTEN:
+                    proc = psutil.Process(conn.pid)
+                    if 'python' in proc.name().lower() or 'uvicorn' in proc.name().lower():
+                        running_processes.append(proc)
+            except (psutil.NoSuchProcess, psutil.AccessDenied, AttributeError):
+                continue
+    except (psutil.AccessDenied, OSError):
+        # Fall back to process search only
+        pass
+    
+    # Check for launch-dashboard.py processes
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            cmdline = proc.info.get('cmdline', [])
+            if cmdline and any('launch-dashboard.py' in str(arg) for arg in cmdline):
+                if proc.pid != os.getpid():  # Don't include current process
+                    running_processes.append(proc)
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    
+    # Check for uvicorn processes running our API
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            cmdline = proc.info.get('cmdline', [])
+            if (cmdline and 
+                any('uvicorn' in str(arg) for arg in cmdline) and
+                any('dashboard.backend.api:app' in str(arg) for arg in cmdline)):
+                running_processes.append(proc)
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    
+    # Remove duplicates by PID
+    seen_pids = set()
+    unique_processes = []
+    for proc in running_processes:
+        try:
+            if proc.pid not in seen_pids:
+                seen_pids.add(proc.pid)
+                unique_processes.append(proc)
+        except psutil.NoSuchProcess:
+            continue
+    
+    return unique_processes
+
+def shutdown_existing_servers(processes):
+    """Gracefully shutdown existing dashboard processes"""
+    if not processes:
+        return
+    
+    print(f"🔍 Found {len(processes)} running dashboard process(es)")
+    
+    # Show what we found
+    for proc in processes:
+        try:
+            cmdline = ' '.join(proc.cmdline()[:3]) if proc.cmdline() else proc.name()
+            print(f"   • PID {proc.pid}: {cmdline}")
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    
+    print(f"\n🛑 Shutting down existing processes...")
+    
+    # First try graceful shutdown (SIGTERM)
+    for proc in processes:
+        try:
+            print(f"   ⏳ Gracefully stopping PID {proc.pid}...")
+            proc.terminate()
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    
+    # Wait for graceful shutdown
+    time.sleep(2)
+    
+    # Check what's still running and force kill if needed
+    still_running = []
+    for proc in processes:
+        try:
+            if proc.is_running():
+                still_running.append(proc)
+        except psutil.NoSuchProcess:
+            continue
+    
+    if still_running:
+        print(f"   💥 Force killing {len(still_running)} stubborn process(es)...")
+        for proc in still_running:
+            try:
+                proc.kill()
+                print(f"   ✅ Killed PID {proc.pid}")
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+        time.sleep(1)
+    
+    print(f"✅ Cleanup complete!\n")
 
 def check_frontend_built():
     """Check if frontend is built"""
@@ -73,12 +176,14 @@ Examples:
   python launch-dashboard.py --port 3000  # Launch on port 3000
   python launch-dashboard.py --dev        # Launch in development mode
   python launch-dashboard.py --no-browser # Don't open browser
+  python launch-dashboard.py --no-cleanup # Skip shutdown check
         """
     )
     parser.add_argument('--port', type=int, default=8000, help='Port to run on (default: 8000)')
     parser.add_argument('--host', type=str, default='127.0.0.1', help='Host to bind to (default: 127.0.0.1)')
     parser.add_argument('--no-browser', action='store_true', help='Don\'t open browser automatically')
     parser.add_argument('--dev', action='store_true', help='Run in development mode with auto-reload')
+    parser.add_argument('--no-cleanup', action='store_true', help='Skip checking for and shutting down existing processes')
     args = parser.parse_args()
     
     # Check dependencies
@@ -87,6 +192,12 @@ Examples:
     # Ensure we're in the right directory
     project_root = Path(__file__).parent
     os.chdir(project_root)
+    
+    # Check for running servers and shut them down
+    if not args.no_cleanup:
+        running_processes = check_running_servers(args.port)
+        if running_processes:
+            shutdown_existing_servers(running_processes)
     
     # Check if frontend is built
     frontend_ready = check_frontend_built()
