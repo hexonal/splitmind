@@ -95,37 +95,24 @@ This file will be modified by multiple agents, so use file locking:
         # Add tasks
         print("\n📝 Adding coordination test tasks...")
         for i, task_data in enumerate(tasks):
-            task_data["task_id"] = str(i + 1)
-            # Use query parameters for simple task creation
+            # Use query parameters for simple task creation with prompt
             params = {
                 "title": task_data["title"],
-                "description": task_data.get("description", "")
+                "description": task_data.get("description", ""),
+                "priority": task_data.get("priority", 1)
             }
+            
+            # Add prompt and dependencies if available
+            if "prompt" in task_data:
+                params["prompt"] = task_data["prompt"]
+            
             response = await client.post(
                 f"http://localhost:8000/api/projects/{project_id}/tasks",
                 params=params
             )
             if response.status_code == 200:
                 task = response.json()
-                # Update task with additional fields
-                update_data = {
-                    "branch": task_data.get("branch"),
-                    "priority": task_data.get("priority", 1),
-                    "prompt": task_data.get("prompt"),
-                    "task_id": task_data["task_id"]
-                }
-                if "dependencies" in task_data:
-                    update_data["dependencies"] = task_data["dependencies"]
-                
-                # Update the task
-                update_response = await client.put(
-                    f"http://localhost:8000/api/projects/{project_id}/tasks/{task['id']}",
-                    json=update_data
-                )
-                if update_response.status_code == 200:
-                    print(f"✅ Added: {task_data['title']}")
-                else:
-                    print(f"⚠️  Task created but update failed: {update_response.text}")
+                print(f"✅ Added: {task_data['title']} (ID: {task['id']})")
             else:
                 print(f"❌ Failed to add task: {response.text}")
         

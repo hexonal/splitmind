@@ -1,0 +1,32 @@
+#!/usr/bin/expect -f
+# Expect script to run Claude with proper TTY handling
+
+set prompt_file [lindex $argv 0]
+set timeout -1
+
+# Read the prompt from file
+set fp [open $prompt_file r]
+set prompt [read $fp]
+close $fp
+
+# Spawn Claude with TTY
+spawn claude --dangerously-skip-permissions
+
+# Wait for Claude to be ready (adjust based on actual Claude behavior)
+expect {
+    -re ".*" {
+        # Send the prompt
+        send "$prompt\r"
+        
+        # Let Claude run
+        interact
+    }
+    timeout {
+        puts "Timeout waiting for Claude"
+        exit 1
+    }
+    eof {
+        puts "Claude exited unexpectedly"
+        exit 1
+    }
+}
