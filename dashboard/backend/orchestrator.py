@@ -176,7 +176,7 @@ class OrchestratorManager:
             in_progress_tasks = len([t for t in tasks if t.status == TaskStatus.IN_PROGRESS])
             unclaimed_tasks_count = len([t for t in tasks if t.status == TaskStatus.UNCLAIMED])
             
-            print(f"📊 Current task counts:")
+            print("📊 Current task counts:")
             print(f"   UNCLAIMED: {unclaimed_tasks_count}")
             print(f"   UP_NEXT: {up_next_tasks}")
             print(f"   IN_PROGRESS: {in_progress_tasks}")
@@ -188,7 +188,7 @@ class OrchestratorManager:
             # We want to maintain UP_NEXT tasks equal to max_agents (always keep queue full)
             target_up_next = max_total_active
             
-            print(f"📊 Queue management:")
+            print("📊 Queue management:")
             print(f"   Max agents: {max_total_active}")
             print(f"   Target UP_NEXT: {target_up_next}")
             print(f"   Current UP_NEXT: {up_next_tasks}")
@@ -279,20 +279,20 @@ class OrchestratorManager:
         try:
             
             # Count active agents  
-            active_agents = len([a for a in agents if a.status == "running"])
+            len([a for a in agents if a.status == "running"])
             in_progress_tasks = len([t for t in tasks if t.status == TaskStatus.IN_PROGRESS])
             
             # Check if we can spawn more agents (only count IN_PROGRESS, not UP_NEXT)
             max_concurrent = min(self.config.max_concurrent_agents, project.max_agents)
             available_working_slots = max_concurrent - in_progress_tasks
             
-            print(f"🚀 Agent spawning check:")
+            print("🚀 Agent spawning check:")
             print(f"   Max concurrent: {max_concurrent}")
             print(f"   In progress: {in_progress_tasks}")
             print(f"   Available working slots: {available_working_slots}")
             
             if available_working_slots <= 0:
-                print(f"🚀 No available working slots for agents")
+                print("🚀 No available working slots for agents")
                 return
             
             # Find UP_NEXT tasks ready to be spawned
@@ -335,7 +335,7 @@ class OrchestratorManager:
                     print(f"🚀 Spawning agent for task: {task.title}")
                     await self._spawn_agent_for_task(pm, task)
             else:
-                print(f"🚀 No UP_NEXT tasks found to spawn")
+                print("🚀 No UP_NEXT tasks found to spawn")
         
         except Exception as e:
             print(f"Error spawning agents: {e}")
@@ -376,14 +376,14 @@ class OrchestratorManager:
                 
                 if claude_md_src.exists():
                     shutil.copy2(claude_md_src, worktree_path / "CLAUDE.md")
-                    print(f"📄 Copied CLAUDE.md to worktree")
+                    print("📄 Copied CLAUDE.md to worktree")
                 
                 if claude_dir_src.exists() and claude_dir_src.is_dir():
                     claude_dir_dst = worktree_path / ".claude"
                     if claude_dir_dst.exists():
                         shutil.rmtree(claude_dir_dst)
                     shutil.copytree(claude_dir_src, claude_dir_dst)
-                    print(f"📁 Copied .claude folder to worktree")
+                    print("📁 Copied .claude folder to worktree")
                 
                 # Run initialization script
                 init_script = get_initialization_script(task.id, str(worktree_path))
@@ -419,14 +419,14 @@ class OrchestratorManager:
             else:
                 # Use default prompt
                 prompt = f"You are working on {pm.project.name}."
-                prompt += f"\\n\\nIMPORTANT: Use the TodoWrite tool to create a todo list for this task. Break down the work into clear, actionable items and track your progress by updating the todo status as you complete each item."
+                prompt += "\\n\\nIMPORTANT: Use the TodoWrite tool to create a todo list for this task. Break down the work into clear, actionable items and track your progress by updating the todo status as you complete each item."
                 prompt += f"\\n\\nCreate a plan, review your plan and choose the best option, then accomplish the following task and commit the changes: {task.title}"
                 if task.description:
                     prompt += f"\\n\\nDescription: {task.description}"
             
             # Add todo tool reminder
             if "TodoWrite" not in prompt:
-                prompt += f"\\n\\nREMINDER: Use the TodoWrite tool to break down this task into manageable todos and track your progress. Mark todos as 'in_progress' when you start them and 'completed' when done."
+                prompt += "\\n\\nREMINDER: Use the TodoWrite tool to break down this task into manageable todos and track your progress. Mark todos as 'in_progress' when you start them and 'completed' when done."
             
             # Add status file instruction with clear command
             prompt += f"\\n\\nIMPORTANT: When you have completed all work and committed your changes, execute this command as your FINAL action:\\nbash -c 'echo COMPLETED > {status_file}'"
@@ -444,7 +444,7 @@ class OrchestratorManager:
             ], check=True)
             
             # Get the PTY runner path
-            pty_runner_path = Path(__file__).parent / "claude_pty_runner.py"
+            Path(__file__).parent / "claude_pty_runner.py"
             
             # Prepare template variables
             project_id = pm.project.id
@@ -567,7 +567,7 @@ echo "Claude exited unexpectedly"
                 try:
                     os.remove(wrapper_file)
                     os.remove(prompt_file)
-                except:
+                except (OSError, FileNotFoundError):
                     pass
             
             threading.Thread(target=cleanup, daemon=True).start()

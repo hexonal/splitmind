@@ -5,19 +5,16 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Optional, Dict
+from typing import List, Optional
 from pathlib import Path
 from contextlib import asynccontextmanager
 import asyncio
-import json
-import os
 import platform
 import subprocess
 
 from .models import (
     Project, Task, TaskStatus, Agent, ProjectStats, 
-    OrchestratorConfig, WebSocketMessage,
-    PlanGenerationRequest, PlanGenerationResponse
+    OrchestratorConfig, WebSocketMessage
 )
 from .config import config_manager
 from .project_manager import ProjectManager
@@ -31,7 +28,8 @@ try:
     a2amcp_available = True
 except ImportError:
     a2amcp_available = False
-    is_a2amcp_available = lambda: False
+    def is_a2amcp_available():
+        return False
 
 # WebSocket manager
 ws_manager = WebSocketManager()
@@ -60,7 +58,7 @@ async def lifespan(app: FastAPI):
         for conn in list(ws_manager.active_connections):
             try:
                 await conn.close()
-            except:
+            except (ConnectionError, Exception):
                 pass
         ws_manager.active_connections.clear()
     except Exception:
@@ -471,7 +469,7 @@ async def merge_task(project_id: str, task_id: str, force: bool = False):
                 raise Exception(f"Failed to checkout main: {checkout_main.stderr}")
             
             # Pull latest main
-            pull_result = subprocess.run(
+            subprocess.run(
                 ["git", "pull", "origin", "main"],
                 cwd=str(pm.project_path),
                 capture_output=True,
@@ -502,7 +500,7 @@ async def merge_task(project_id: str, task_id: str, force: bool = False):
                         raise Exception(f"Failed to push branch from worktree: {push_result.stderr}")
                     
                     # Fetch the branch in main repo
-                    fetch_result = subprocess.run(
+                    subprocess.run(
                         ["git", "fetch", "origin", task.branch],
                         cwd=str(pm.project_path),
                         capture_output=True,
@@ -524,7 +522,7 @@ async def merge_task(project_id: str, task_id: str, force: bool = False):
             else:
                 raise Exception(f"Merge failed: {merge_result.stderr}")
                 
-        except Exception as e:
+        except Exception:
             # If direct merge fails, fall back to the auto-merge script
             result = subprocess.run([
                 "python",
@@ -681,7 +679,7 @@ async def reset_agent_tasks(project_id: str):
                     text=True
                 )
                 killed_sessions.append(agent.session_name)
-            except:
+            except subprocess.SubprocessError:
                 pass
         
         # Reset ALL tasks to unclaimed (except merged ones)
@@ -827,7 +825,7 @@ async def generate_plan(project_id: str, request: dict):
         suggested_tasks = result["suggested_tasks"]
         
         # Update project with overview, prompt, and plan
-        updated_project = config_manager.update_project(project_id, {
+        config_manager.update_project(project_id, {
             "project_overview": project_overview,
             "initial_prompt": initial_prompt,
             "plan": plan
@@ -928,7 +926,7 @@ async def generate_task_breakdown(project_id: str, request: dict):
         suggested_tasks = result["suggested_tasks"]
         
         # Update project with overview, prompt, plan, and task breakdown
-        updated_project = config_manager.update_project(project_id, {
+        config_manager.update_project(project_id, {
             "project_overview": project_overview,
             "initial_prompt": initial_prompt,
             "plan": plan
@@ -1317,7 +1315,7 @@ async def check_claude_cli():
                 )
                 if version_result.returncode == 0:
                     version = version_result.stdout.strip()
-            except:
+            except (subprocess.SubprocessError, OSError):
                 pass
         
         return {
